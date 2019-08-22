@@ -195,53 +195,50 @@ namespace ESHQSetupStub
 			switch (metrics.StartupPosition)
 				{
 				case LogoDrawerObjectStartupPositions.Left:
-				case LogoDrawerObjectStartupPositions.LeftFlat :
-					x = -ρ;
-					if (metrics.StartupPosition == LogoDrawerObjectStartupPositions.Left)
-						y = rnd.Next ((int)ScreenHeight + ρ) - ρ / 2;
-					else
-						y = (int)ScreenHeight / 2;
-
-					endX = (int)ScreenWidth + ρ;
-					endY = y;
-					speedX = (metrics.MinSpeed == metrics.MaxSpeed) ? (int)metrics.MinSpeed :
-						rnd.Next ((int)metrics.MinSpeed, (int)metrics.MaxSpeed + 1);
-					speedY = 0;
-					break;
-
+				case LogoDrawerObjectStartupPositions.LeftFlat:
 				case LogoDrawerObjectStartupPositions.Right:
-				case LogoDrawerObjectStartupPositions.RightFlat :
-					x = (int)ScreenWidth + ρ;
-					if (metrics.StartupPosition == LogoDrawerObjectStartupPositions.Right)
-						y = rnd.Next ((int)ScreenHeight + ρ) - ρ / 2;
-					else
-						y = (int)ScreenHeight / 2;
-
-						endX = -ρ;
-					endY = y;
+				case LogoDrawerObjectStartupPositions.RightFlat:
 					speedX = -((metrics.MinSpeed == metrics.MaxSpeed) ? (int)metrics.MinSpeed :
 						rnd.Next ((int)metrics.MinSpeed, (int)metrics.MaxSpeed + 1));
 					speedY = 0;
+
+					if (LogoDrawerSupport.IsLeft (metrics.StartupPosition))
+						{
+						x = -ρ;
+						endX = (int)ScreenWidth + ρ;
+						}
+					else
+						{
+						x = (int)ScreenWidth + ρ;
+						endX = -ρ;
+						speedX *= -1;
+						}
+
+					if (!LogoDrawerSupport.IsFlat (metrics.StartupPosition))
+						endY = y = rnd.Next ((int)ScreenHeight + ρ) - ρ / 2;
+					else
+						endY = y = (int)ScreenHeight / 2;
 					break;
 
 				case LogoDrawerObjectStartupPositions.Top:
-					x = rnd.Next ((int)ScreenWidth + ρ) - ρ / 2;
-					y = -ρ;
-					endX = x;
-					endY = (int)ScreenHeight + ρ;
+				case LogoDrawerObjectStartupPositions.Bottom:
 					speedX = 0;
 					speedY = (metrics.MinSpeed == metrics.MaxSpeed) ? (int)metrics.MinSpeed :
 						rnd.Next ((int)metrics.MinSpeed, (int)metrics.MaxSpeed + 1);
-					break;
 
-				case LogoDrawerObjectStartupPositions.Bottom:
-					x = rnd.Next ((int)ScreenWidth + ρ) - ρ / 2;
-					y = (int)ScreenHeight + ρ;
-					endX = x;
-					endY = -ρ;
-					speedX = 0;
-					speedY = -((metrics.MinSpeed == metrics.MaxSpeed) ? (int)metrics.MinSpeed :
-						rnd.Next ((int)metrics.MinSpeed, (int)metrics.MaxSpeed + 1));
+					if (metrics.StartupPosition == LogoDrawerObjectStartupPositions.Top)
+						{
+						y = -ρ;
+						endY = (int)ScreenHeight + ρ;
+						}
+					else
+						{
+						y = (int)ScreenHeight + ρ;
+						endY = -ρ;
+						speedY *= -1;
+						}
+
+					endX = x = rnd.Next ((int)ScreenWidth + ρ) - ρ / 2;
 					break;
 
 				case LogoDrawerObjectStartupPositions.CenterRandom:
@@ -258,8 +255,7 @@ namespace ESHQSetupStub
 							speedY = rnd.Next (-(int)metrics.MinSpeed, (int)metrics.MaxSpeed + 1);
 						}
 
-					if ((metrics.StartupPosition == LogoDrawerObjectStartupPositions.CenterRandom) ||
-						(metrics.StartupPosition == LogoDrawerObjectStartupPositions.CenterFlat))
+					if (LogoDrawerSupport.IsCenter (metrics.StartupPosition))
 						{
 						x = (int)ScreenWidth / 2;
 						y = (int)ScreenHeight / 2;
@@ -285,7 +281,7 @@ namespace ESHQSetupStub
 		/// Метод выполняет смещение объекта
 		/// </summary>
 		/// <param name="Acceleration">Движение с ускорением</param>
-		/// <param name="Enlarging">Увеличение (+)/уменьшение (-) при движении (неактивно)</param>
+		/// <param name="Enlarging">Увеличение (+)/уменьшение (-) при движении</param>
 		public void Move (bool Acceleration, int Enlarging)
 			{
 			// Отсечка
@@ -688,13 +684,23 @@ namespace ESHQSetupStub
 
 			sidesCount = (SidesCount < 3) ? 4 : SidesCount;
 			ρ = (metrics.MinSize == metrics.MaxSize) ? (int)metrics.MinSize : rnd.Next ((int)metrics.MinSize, (int)metrics.MaxSize);
-			φ = rotation ? rnd.Next (0, 360) : 0;
-			speedOfRotation = (metrics.MinSpeed == metrics.MaxSpeed) ? (int)metrics.MinSpeed :
-				rnd.Next ((int)metrics.MinSpeed, (int)metrics.MaxSpeed + 1);
-			speedOfRotation *= ((rnd.Next (2) == 0) ? -1 : 1);
+
+			if (rotation)
+				{
+				φ = rnd.Next (0, 360);
+				speedOfRotation = (metrics.MinSpeed == metrics.MaxSpeed) ? (int)metrics.MinSpeed :
+					rnd.Next ((int)metrics.MinSpeed, (int)metrics.MaxSpeed + 1);
+				speedOfRotation *= ((rnd.Next (2) == 0) ? -1 : 1);
+				}
+			else
+				{
+				φ = (360 * 3) / (metrics.PolygonsSidesCount * 4);	// Ориентация вверх
+				speedOfRotation = 0;
+				}
+
 			maxFluctuation = (int)metrics.MaxSpeedFluctuation;
 
-			objectBrush = new SolidBrush (Color.FromArgb (255,//rnd.Next (200, 256),
+			objectBrush = new SolidBrush (Color.FromArgb (255,
 				(metrics.MinRed == metrics.MaxRed) ? metrics.MinRed : rnd.Next (metrics.MinRed, (int)metrics.MaxRed + 1),
 				(metrics.MinGreen == metrics.MaxGreen) ? metrics.MinGreen : rnd.Next (metrics.MinGreen, (int)metrics.MaxGreen + 1),
 				(metrics.MinBlue == metrics.MaxBlue) ? metrics.MinBlue : rnd.Next (metrics.MinBlue, (int)metrics.MaxBlue + 1)));
@@ -703,53 +709,50 @@ namespace ESHQSetupStub
 			switch (metrics.StartupPosition)
 				{
 				case LogoDrawerObjectStartupPositions.Left:
-				case LogoDrawerObjectStartupPositions.LeftFlat :
-					x = -2 * ρ;
-					if (metrics.StartupPosition == LogoDrawerObjectStartupPositions.Left)
-						y = rnd.Next ((int)ScreenHeight + 2 * ρ) - ρ;
-					else
-						y = (int)ScreenHeight / 2;
-
-					endX = (int)ScreenWidth + 2 * ρ;
-					endY = y;
+				case LogoDrawerObjectStartupPositions.LeftFlat:
+				case LogoDrawerObjectStartupPositions.Right:
+				case LogoDrawerObjectStartupPositions.RightFlat:
 					speedX = (metrics.MinSpeed == metrics.MaxSpeed) ? (int)metrics.MinSpeed :
 						rnd.Next ((int)metrics.MinSpeed, (int)metrics.MaxSpeed + 1);
 					speedY = 0;
-					break;
 
-				case LogoDrawerObjectStartupPositions.Right:
-				case LogoDrawerObjectStartupPositions.RightFlat :
-					x = (int)ScreenWidth + 2 * ρ;
-					if (metrics.StartupPosition == LogoDrawerObjectStartupPositions.Right)
-						y = rnd.Next ((int)ScreenHeight + 2 * ρ) - ρ;
+					if (LogoDrawerSupport.IsLeft (metrics.StartupPosition))
+						{
+						x = -2 * ρ;
+						endX = (int)ScreenWidth + 2 * ρ;
+						}
 					else
-						y = (int)ScreenHeight / 2;
+						{
+						x = (int)ScreenWidth + 2 * ρ;
+						endX = -2 * ρ;
+						speedX *= -1;
+						}
 
-					endX = -2 * ρ;
-					endY = y;
-					speedX = -((metrics.MinSpeed == metrics.MaxSpeed) ? (int)metrics.MinSpeed :
-						rnd.Next ((int)metrics.MinSpeed, (int)metrics.MaxSpeed + 1));
-					speedY = 0;
+					if (!LogoDrawerSupport.IsFlat (metrics.StartupPosition))
+						endY = y = rnd.Next ((int)ScreenHeight + 2 * ρ) - ρ;
+					else
+						endY = y = (int)ScreenHeight / 2;
 					break;
 
 				case LogoDrawerObjectStartupPositions.Top:
-					x = rnd.Next ((int)ScreenWidth + 2 * ρ) - ρ;
-					y = -2 * ρ;
-					endX = x;
-					endY = (int)ScreenHeight + 2 * ρ;
+				case LogoDrawerObjectStartupPositions.Bottom:
 					speedX = 0;
 					speedY = (metrics.MinSpeed == metrics.MaxSpeed) ? (int)metrics.MinSpeed :
 						rnd.Next ((int)metrics.MinSpeed, (int)metrics.MaxSpeed + 1);
-					break;
 
-				case LogoDrawerObjectStartupPositions.Bottom:
-					x = rnd.Next ((int)ScreenWidth + 2 * ρ) - ρ;
-					y = (int)ScreenHeight + 2 * ρ;
-					endX = x;
-					endY = -2 * ρ;
-					speedX = 0;
-					speedY = -((metrics.MinSpeed == metrics.MaxSpeed) ? (int)metrics.MinSpeed :
-						rnd.Next ((int)metrics.MinSpeed, (int)metrics.MaxSpeed + 1));
+					if (metrics.StartupPosition == LogoDrawerObjectStartupPositions.Top)
+						{
+						y = -2 * ρ;
+						endY = (int)ScreenHeight + 2 * ρ;
+						}
+					else
+						{
+						y = (int)ScreenHeight + 2 * ρ;
+						endY = -2 * ρ;
+						speedY *= -1;
+						}
+
+					endX = x = rnd.Next ((int)ScreenWidth + 2 * ρ) - ρ;
 					break;
 
 				case LogoDrawerObjectStartupPositions.CenterRandom:
@@ -766,8 +769,7 @@ namespace ESHQSetupStub
 							speedY = rnd.Next (-(int)metrics.MinSpeed, (int)metrics.MaxSpeed + 1);
 						}
 
-					if ((metrics.StartupPosition == LogoDrawerObjectStartupPositions.CenterRandom) ||
-						(metrics.StartupPosition == LogoDrawerObjectStartupPositions.CenterFlat))
+					if (LogoDrawerSupport.IsCenter (metrics.StartupPosition))
 						{
 						x = (int)ScreenWidth / 2;
 						y = (int)ScreenHeight / 2;
@@ -976,6 +978,40 @@ namespace ESHQSetupStub
 			{
 			return Math.Cos (D2R (ArcInDegrees));
 			}
+
+		/// <summary>
+		/// Метод возвращает true, если указанная позиция относится к разновидности Flat
+		/// </summary>
+		/// <param name="Position">Стартовая позиция объекта</param>
+		/// <returns></returns>
+		public static bool IsFlat (LogoDrawerObjectStartupPositions Position)
+			{
+			return (Position == LogoDrawerObjectStartupPositions.LeftFlat) ||
+				(Position == LogoDrawerObjectStartupPositions.RightFlat) ||
+				(Position == LogoDrawerObjectStartupPositions.CenterFlat);
+			}
+
+		/// <summary>
+		/// Метод возвращает true, если указанная позиция относится к разновидности Left
+		/// </summary>
+		/// <param name="Position">Стартовая позиция объекта</param>
+		/// <returns></returns>
+		public static bool IsLeft (LogoDrawerObjectStartupPositions Position)
+			{
+			return (Position == LogoDrawerObjectStartupPositions.Left) ||
+				(Position == LogoDrawerObjectStartupPositions.LeftFlat);
+			}
+
+		/// <summary>
+		/// Метод возвращает true, если указанная позиция относится к разновидности Center
+		/// </summary>
+		/// <param name="Position">Стартовая позиция объекта</param>
+		/// <returns></returns>
+		public static bool IsCenter (LogoDrawerObjectStartupPositions Position)
+			{
+			return (Position == LogoDrawerObjectStartupPositions.CenterFlat) ||
+				(Position == LogoDrawerObjectStartupPositions.CenterRandom);
+			}
 		}
 
 	/// <summary>
@@ -1106,53 +1142,50 @@ namespace ESHQSetupStub
 			switch (metrics.StartupPosition)
 				{
 				case LogoDrawerObjectStartupPositions.Left:
-				case LogoDrawerObjectStartupPositions.LeftFlat :
-					x = -sourceImage.Width;
-					if (metrics.StartupPosition == LogoDrawerObjectStartupPositions.Left)
-						y = rnd.Next ((int)ScreenHeight + sourceImage.Height) - sourceImage.Height / 2;
-					else
-						y = (int)ScreenHeight / 2;
-					
-					endX = (int)ScreenWidth + sourceImage.Width;
-					endY = y;
+				case LogoDrawerObjectStartupPositions.LeftFlat:
+				case LogoDrawerObjectStartupPositions.Right:
+				case LogoDrawerObjectStartupPositions.RightFlat:
 					speedX = (metrics.MinSpeed == metrics.MaxSpeed) ? (int)metrics.MinSpeed :
 						rnd.Next ((int)metrics.MinSpeed, (int)metrics.MaxSpeed + 1);
 					speedY = 0;
-					break;
 
-				case LogoDrawerObjectStartupPositions.Right:
-				case LogoDrawerObjectStartupPositions.RightFlat :
-					x = (int)ScreenWidth + sourceImage.Width;
-					if (metrics.StartupPosition == LogoDrawerObjectStartupPositions.Right)
-						y = rnd.Next ((int)ScreenHeight + sourceImage.Height) - sourceImage.Height / 2;
+					if (LogoDrawerSupport.IsLeft (metrics.StartupPosition))
+						{
+						x = -sourceImage.Width;
+						endX = (int)ScreenWidth + sourceImage.Width;
+						}
 					else
-						y = (int)ScreenHeight / 2;
+						{
+						x = (int)ScreenWidth + sourceImage.Width;
+						endX = -sourceImage.Width;
+						speedX *= -1;
+						}
 
-					endX = -sourceImage.Width;
-					endY = y;
-					speedX = -((metrics.MinSpeed == metrics.MaxSpeed) ? (int)metrics.MinSpeed :
-						rnd.Next ((int)metrics.MinSpeed, (int)metrics.MaxSpeed + 1));
-					speedY = 0;
+					if (!LogoDrawerSupport.IsFlat (metrics.StartupPosition))
+						endY = y = rnd.Next ((int)ScreenHeight + sourceImage.Height) - sourceImage.Height / 2;
+					else
+						endY = y = (int)ScreenHeight / 2;
 					break;
 
 				case LogoDrawerObjectStartupPositions.Top:
-					x = rnd.Next ((int)ScreenWidth + sourceImage.Width) - sourceImage.Width / 2;
-					y = -sourceImage.Height;
-					endX = x;
-					endY = (int)ScreenHeight + sourceImage.Height;
+				case LogoDrawerObjectStartupPositions.Bottom:
 					speedX = 0;
 					speedY = (metrics.MinSpeed == metrics.MaxSpeed) ? (int)metrics.MinSpeed :
 						rnd.Next ((int)metrics.MinSpeed, (int)metrics.MaxSpeed + 1);
-					break;
 
-				case LogoDrawerObjectStartupPositions.Bottom:
-					x = rnd.Next ((int)ScreenWidth + sourceImage.Width) - sourceImage.Width / 2;
-					y = (int)ScreenHeight + sourceImage.Height;
-					endX = x;
-					endY = -sourceImage.Height;
-					speedX = 0;
-					speedY = -((metrics.MinSpeed == metrics.MaxSpeed) ? (int)metrics.MinSpeed :
-						rnd.Next ((int)metrics.MinSpeed, (int)metrics.MaxSpeed + 1));
+					if (metrics.StartupPosition == LogoDrawerObjectStartupPositions.Top)
+						{
+						y = -sourceImage.Height;
+						endY = (int)ScreenHeight + sourceImage.Height;
+						}
+					else
+						{
+						y = (int)ScreenHeight + sourceImage.Height;
+						endY = -sourceImage.Height;
+						speedY *= -1;
+						}
+
+					endX = x = rnd.Next ((int)ScreenWidth + sourceImage.Width) - sourceImage.Width / 2;
 					break;
 
 				case LogoDrawerObjectStartupPositions.CenterRandom:
@@ -1169,8 +1202,7 @@ namespace ESHQSetupStub
 							speedY = rnd.Next (-(int)metrics.MinSpeed, (int)metrics.MaxSpeed + 1);
 						}
 
-					if ((metrics.StartupPosition == LogoDrawerObjectStartupPositions.CenterRandom) ||
-						(metrics.StartupPosition == LogoDrawerObjectStartupPositions.CenterFlat))
+					if (LogoDrawerSupport.IsCenter (metrics.StartupPosition))
 						{
 						x = (int)ScreenWidth / 2;
 						y = (int)ScreenHeight / 2;
@@ -1394,20 +1426,18 @@ namespace ESHQSetupStub
 			rnd = Randomizer;
 
 			if (metrics.Rotation)
-				φ = rnd.Next (0, 360);
-			else
-				φ = 0;
-
-			if (metrics.Rotation)
 				{
 				speedOfRotation = (metrics.MinSpeed == metrics.MaxSpeed) ? (int)metrics.MinSpeed :
 					rnd.Next ((int)metrics.MinSpeed, (int)metrics.MaxSpeed + 1);
 				speedOfRotation *= ((rnd.Next (2) == 0) ? -1 : 1);
+				φ = rnd.Next (0, 360);
 				}
 			else
 				{
 				speedOfRotation = 0;
+				φ = 0;
 				}
+
 			maxFluctuation = (int)metrics.MaxSpeedFluctuation;
 
 			// Получение изображения
@@ -1436,53 +1466,50 @@ namespace ESHQSetupStub
 			switch (metrics.StartupPosition)
 				{
 				case LogoDrawerObjectStartupPositions.Left:
-				case LogoDrawerObjectStartupPositions.LeftFlat :
-					x = -sourceImage.Width;
-					if (metrics.StartupPosition == LogoDrawerObjectStartupPositions.Left)
-						y = rnd.Next ((int)ScreenHeight + sourceImage.Height) - sourceImage.Height / 2;
-					else
-						y = (int)ScreenHeight / 2;
-
-					endX = (int)ScreenWidth + sourceImage.Width;
-					endY = y;
+				case LogoDrawerObjectStartupPositions.LeftFlat:
+				case LogoDrawerObjectStartupPositions.Right:
+				case LogoDrawerObjectStartupPositions.RightFlat:
 					speedX = (metrics.MinSpeed == metrics.MaxSpeed) ? (int)metrics.MinSpeed :
 						rnd.Next ((int)metrics.MinSpeed, (int)metrics.MaxSpeed + 1);
 					speedY = 0;
-					break;
 
-				case LogoDrawerObjectStartupPositions.Right:
-				case LogoDrawerObjectStartupPositions.RightFlat :
-					x = (int)ScreenWidth + sourceImage.Width;
-					if (metrics.StartupPosition == LogoDrawerObjectStartupPositions.Right)
-						y = rnd.Next ((int)ScreenHeight + sourceImage.Height) - sourceImage.Height / 2;
+					if (LogoDrawerSupport.IsLeft (metrics.StartupPosition))
+						{
+						x = -sourceImage.Width;
+						endX = (int)ScreenWidth + sourceImage.Width;
+						}
 					else
-						y = (int)ScreenHeight / 2;
+						{
+						x = (int)ScreenWidth + sourceImage.Width;
+						endX = -sourceImage.Width;
+						speedX *= -1;
+						}
 
-					endX = -sourceImage.Width;
-					endY = y;
-					speedX = -((metrics.MinSpeed == metrics.MaxSpeed) ? (int)metrics.MinSpeed :
-						rnd.Next ((int)metrics.MinSpeed, (int)metrics.MaxSpeed + 1));
-					speedY = 0;
+					if (!LogoDrawerSupport.IsFlat (metrics.StartupPosition))
+						endY = y = rnd.Next ((int)ScreenHeight + sourceImage.Height) - sourceImage.Height / 2;
+					else
+						endY = y = (int)ScreenHeight / 2;
 					break;
 
 				case LogoDrawerObjectStartupPositions.Top:
-					x = rnd.Next ((int)ScreenWidth + sourceImage.Width) - sourceImage.Width / 2;
-					y = -sourceImage.Height;
-					endX = x;
-					endY = (int)ScreenHeight + sourceImage.Height;
+				case LogoDrawerObjectStartupPositions.Bottom:
 					speedX = 0;
 					speedY = (metrics.MinSpeed == metrics.MaxSpeed) ? (int)metrics.MinSpeed :
 						rnd.Next ((int)metrics.MinSpeed, (int)metrics.MaxSpeed + 1);
-					break;
 
-				case LogoDrawerObjectStartupPositions.Bottom:
-					x = rnd.Next ((int)ScreenWidth + sourceImage.Width) - sourceImage.Width / 2;
-					y = (int)ScreenHeight + sourceImage.Height;
-					endX = x;
-					endY = -sourceImage.Height;
-					speedX = 0;
-					speedY = -((metrics.MinSpeed == metrics.MaxSpeed) ? (int)metrics.MinSpeed :
-						rnd.Next ((int)metrics.MinSpeed, (int)metrics.MaxSpeed + 1));
+					if (metrics.StartupPosition == LogoDrawerObjectStartupPositions.Top)
+						{
+						y = -sourceImage.Height;
+						endY = (int)ScreenHeight + sourceImage.Height;
+						}
+					else
+						{
+						y = (int)ScreenHeight + sourceImage.Height;
+						endY = -sourceImage.Height;
+						speedY *= -1;
+						}
+
+					endX = x = rnd.Next ((int)ScreenWidth + sourceImage.Width) - sourceImage.Width / 2;
 					break;
 
 				case LogoDrawerObjectStartupPositions.CenterRandom:
@@ -1499,8 +1526,7 @@ namespace ESHQSetupStub
 							speedY = rnd.Next (-(int)metrics.MinSpeed, (int)metrics.MaxSpeed + 1);
 						}
 
-					if ((metrics.StartupPosition == LogoDrawerObjectStartupPositions.CenterRandom) ||
-						(metrics.StartupPosition == LogoDrawerObjectStartupPositions.CenterFlat))
+					if (LogoDrawerSupport.IsCenter (metrics.StartupPosition))
 						{
 						x = (int)ScreenWidth / 2;
 						y = (int)ScreenHeight / 2;

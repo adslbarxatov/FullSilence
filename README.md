@@ -1,4 +1,4 @@
-# FullSilence visualization tool v 2.1
+# FullSilence visualization tool v 2.2
 Фрагменты кода, используемые в рамках одноимённого проекта при визуализации текста
 #
 

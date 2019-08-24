@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Drawing;
+using System.Drawing.Imaging;
 using System.IO;
 using System.Text;
 using System.Windows.Forms;
@@ -21,6 +22,8 @@ namespace ESHQSetupStub
 		private float scale = 1.0f;								// Главный масштаб
 		private const uint generalStep = 3;						// Длительность главного шага отображения
 		private string commandLine;								// Параметры командной строки
+		private ParametersPicker pp;							// Форма запроса параметров работы отрисовщика
+		private double textFieldPart = 3.0 / 8.0;				// Часть поля отрисовки, занимаемая текстом
 
 		// Текст
 		private List<List<LogoDrawerString>> mainStringsSet = new List<List<LogoDrawerString>> ();		// Основной текст
@@ -45,6 +48,9 @@ namespace ESHQSetupStub
 		private uint textFontSize, signatureFontSize;
 		private Pen logoBackPen;
 		private Color currentColor;
+
+		private ColorMatrix fadeMatrix;							// Матрица затенения текста
+		private ImageAttributes fadeAttributes;					// Дескриптор параметров затенения
 
 		private List<Bitmap> logo = new List<Bitmap> ();		// Фрагменты основного лого
 
@@ -157,12 +163,12 @@ namespace ESHQSetupStub
 				}
 			SFVideo.FileName = Path.GetFileNameWithoutExtension (OFConfig.FileName) + ".avi";
 
-			// Запрос на запись в видеопоток
+			pp = new ParametersPicker ();	// Запрос параметров отрисовки
+
+			// Подготовка к записи в видеопоток
 			layers.Add (new LogoDrawerLayer (0, 0, (uint)this.Width, (uint)this.Height));	// Главный слой
 
-			if ((MessageBox.Show ("Write frames to AVI?", ProgramDescription.AssemblyTitle,
-				MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes) &&
-				(SFVideo.ShowDialog () == DialogResult.OK))
+			if (pp.WriteFramesToAVI && (SFVideo.ShowDialog () == DialogResult.OK))
 				{
 				vm = new VideoManager (SFVideo.FileName, 100.0 / generalStep, layers[0].Layer, true);
 
@@ -184,13 +190,12 @@ namespace ESHQSetupStub
 				}
 
 			logoFont = new Font ("a_AvanteInt", 100 * scale, FontStyle.Bold);
-			versionFont = new Font ("a_AvanteInt", 20 * scale, FontStyle.Bold | FontStyle.Italic);
+			versionFont = new Font ("a_AvanteInt", 24 * scale);
 			textFont = new Font ("Monotype Corsiva", textFontSize * scale, FontStyle.Italic);
 			signatureFont = new Font ("Annabelle", signatureFontSize * scale, FontStyle.Italic);
 
-			// Загрузка звука (необязательно; не выполняется при выводе на экран)
-			if (MessageBox.Show ("Play specified ambience?", ProgramDescription.AssemblyTitle,
-				MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes)
+			// Подготовка к воспроизведению эмбиента
+			if (pp.PlayAttachedAmbience)
 				{
 				am = new AudioManager (Path.GetDirectoryName (OFConfig.FileName) + "\\" +
 					Path.GetFileNameWithoutExtension (OFConfig.FileName) + ".wav", false);
@@ -218,6 +223,16 @@ namespace ESHQSetupStub
 			lineLeft = lineRight = (int)(50 * scale);
 			lineFeed = (int)(50 * scale);
 			lineTop = this.Height / 24;
+
+			float[][] fadeMatrixItems = { 
+				new float[] {1, 0, 0, 0, 0},
+				new float[] {0, 1, 0, 0, 0},
+				new float[] {0, 0, 1, 0, 0},
+				new float[] {0, 0, 0, 0.8f, 0}, 
+				new float[] {0, 0, 0, 0, 1}};
+			fadeMatrix = new ColorMatrix (fadeMatrixItems);
+			fadeAttributes = new ImageAttributes ();
+			fadeAttributes.SetColorMatrix (fadeMatrix, ColorMatrixFlag.Default, ColorAdjustType.Bitmap);
 
 			// Запуск
 			ExtendedTimer.Enabled = true;
@@ -284,7 +299,8 @@ namespace ESHQSetupStub
 						SizeF sz = gr.MeasureString (signatureStringsSet[0][0].StringText, signatureStringsSet[0][0].StringFont);
 
 						lineLeft = drawPoint.X = this.Width - lineLeft - (int)sz.Width;
-						drawPoint.Y = 3 * this.Height / 8 - (signatureStringsSet[0][0].StringText.Contains ("\n") ? 3 : 2) * lineFeed;
+						drawPoint.Y = (int)(textFieldPart * this.Height) -
+							(signatureStringsSet[0][0].StringText.Contains ("\n") ? 3 : 2) * lineFeed;
 
 						currentPhase++;
 						}
@@ -345,14 +361,18 @@ namespace ESHQSetupStub
 		private void FlushText ()
 			{
 			// Сброс текста
-			Bitmap b = layers[4].Layer.Clone (new Rectangle (0, (int)steps, layers[4].Layer.Width, layers[4].Layer.Height - (int)steps),
+			/*Bitmap b = layers[4].Layer.Clone (new Rectangle (0, (int)steps, layers[4].Layer.Width, layers[4].Layer.Height - (int)steps),
 				layers[4].Layer.PixelFormat);/**/
 			/*b = layers[4].Layer.Clone (new Rectangle ((int)steps, 0, layers[4].Layer.Width - (int)steps, layers[4].Layer.Height),
 				layers[4].Layer.PixelFormat);/**/
 
+			Bitmap b = (Bitmap)layers[4].Layer.Clone ();
 			layers[4].Dispose ();
-			layers[4] = new LogoDrawerLayer (0, 5 * (uint)this.Height / 8, (uint)this.Width, 3 * (uint)this.Height / 8);
-			layers[4].Descriptor.DrawImage (b, 0, 0);
+			layers[4] = new LogoDrawerLayer (0, (uint)((1.0 - textFieldPart) * this.Height),
+				(uint)this.Width, (uint)(textFieldPart * this.Height));
+
+			layers[4].Descriptor.DrawImage (b, new Rectangle (0, 0, this.Width, (int)(textFieldPart * this.Height)),
+				0, 0, b.Width, b.Height, GraphicsUnit.Pixel, fadeAttributes);
 			b.Dispose ();
 
 			// Обновление фона
@@ -374,15 +394,15 @@ namespace ESHQSetupStub
 		// Отрисовка основного градиента
 		private void MakeGradient ()
 			{
-			layers[3].Descriptor.FillRectangle (plotGradient1Brush, 0, steps, this.Width, 3 * this.Height / 8 - steps);
+			layers[3].Descriptor.FillRectangle (plotGradient1Brush, 0, steps, this.Width, (uint)(textFieldPart * this.Height) - steps);
 
 			if (steps++ >= 150)
 				{
 				drawPoint.X = lineLeft;		// Установка начальной позиции текста
 				drawPoint.Y = lineTop;
 
-				layers.Add (new LogoDrawerLayer (0, 5 * (uint)this.Height / 8,
-					(uint)this.Width, 3 * (uint)this.Height / 8));				// Слой текста
+				layers.Add (new LogoDrawerLayer (0, (uint)((1 - textFieldPart) * this.Height),
+					(uint)this.Width, (uint)(textFieldPart * this.Height)));				// Слой текста
 
 				steps = 0;
 				currentPhase++;
@@ -405,8 +425,8 @@ namespace ESHQSetupStub
 
 				if (currentPhase == Phases.LogoFading)
 					{
-					layers.Add (new LogoDrawerLayer (0, 5 * (uint)this.Height / 8,
-						(uint)this.Width, 3 * (uint)this.Height / 8));					// Слой градиента
+					layers.Add (new LogoDrawerLayer (0, (uint)((1 - textFieldPart) * this.Height),
+						(uint)this.Width, (uint)(textFieldPart * this.Height)));					// Слой градиента
 					}
 				if (currentPhase == Phases.EndingFading2)
 					{
@@ -435,50 +455,56 @@ namespace ESHQSetupStub
 				switch (objectsMetrics.ObjectsType)
 					{
 					default:
-					case 0:
+					case LogoDrawerObjectTypes.Spheres:
 						objects.Add (new LogoDrawerSphere ((uint)this.Width, (uint)this.Height, rnd, objectsMetrics));
 						break;
 
-					case 1:
+					case LogoDrawerObjectTypes.RotatingPolygons:
 						objectsMetrics.AsStars = false;
 						objectsMetrics.Rotation = true;
 						objects.Add (new LogoDrawerSquare ((uint)this.Width, (uint)this.Height, objectsMetrics.PolygonsSidesCount,
 							rnd, objectsMetrics));
 						break;
 
-					case 2:
+					case LogoDrawerObjectTypes.RotatingStars:
 						objectsMetrics.AsStars = true;
 						objectsMetrics.Rotation = true;
 						objects.Add (new LogoDrawerSquare ((uint)this.Width, (uint)this.Height, objectsMetrics.PolygonsSidesCount,
 							rnd, objectsMetrics));
 						break;
 
-					case 3:
+					case LogoDrawerObjectTypes.RotatingLetters:
+						objectsMetrics.Rotation = true;
 						objects.Add (new LogoDrawerLetter ((uint)this.Width, (uint)this.Height, rnd, objectsMetrics));
 						break;
 
-					case 4:
+					case LogoDrawerObjectTypes.Letters:
+						objectsMetrics.Rotation = false;
+						objects.Add (new LogoDrawerLetter ((uint)this.Width, (uint)this.Height, rnd, objectsMetrics));
+						break;
+
+					case LogoDrawerObjectTypes.Polygons:
 						objectsMetrics.AsStars = false;
 						objectsMetrics.Rotation = false;
 						objects.Add (new LogoDrawerSquare ((uint)this.Width, (uint)this.Height, objectsMetrics.PolygonsSidesCount,
 							rnd, objectsMetrics));
 						break;
 
-					case 5:
+					case LogoDrawerObjectTypes.Stars:
 						objectsMetrics.AsStars = true;
 						objectsMetrics.Rotation = false;
 						objects.Add (new LogoDrawerSquare ((uint)this.Width, (uint)this.Height, objectsMetrics.PolygonsSidesCount,
 							rnd, objectsMetrics));
 						break;
 
-					case 6:
+					case LogoDrawerObjectTypes.RotatingPictures:
 						objectsMetrics.Rotation = true;
 						objects.Add (new LogoDrawerPicture ((uint)this.Width, (uint)this.Height,
 							rnd, objectsMetrics, Path.GetDirectoryName (OFConfig.FileName) + "\\" +
 							Path.GetFileNameWithoutExtension (OFConfig.FileName)));
 						break;
 
-					case 7:
+					case LogoDrawerObjectTypes.Pictures:
 						objectsMetrics.Rotation = false;
 						objects.Add (new LogoDrawerPicture ((uint)this.Width, (uint)this.Height,
 							rnd, objectsMetrics, Path.GetDirectoryName (OFConfig.FileName) + "\\" +
@@ -698,24 +724,25 @@ namespace ESHQSetupStub
 					switch (objectsMetrics.ObjectsType)
 						{
 						default:
-						case 0:
+						case LogoDrawerObjectTypes.Spheres:
 							objects[i] = new LogoDrawerSphere ((uint)this.Width, (uint)this.Height, rnd, objectsMetrics);
 							break;
 
-						case 1:
-						case 2:
-						case 4:
-						case 5:
+						case LogoDrawerObjectTypes.Polygons:
+						case LogoDrawerObjectTypes.Stars:
+						case LogoDrawerObjectTypes.RotatingPolygons:
+						case LogoDrawerObjectTypes.RotatingStars:
 							objects[i] = new LogoDrawerSquare ((uint)this.Width, (uint)this.Height, objectsMetrics.PolygonsSidesCount,
 								rnd, objectsMetrics);
 							break;
 
-						case 3:
+						case LogoDrawerObjectTypes.Letters:
+						case LogoDrawerObjectTypes.RotatingLetters:
 							objects[i] = new LogoDrawerLetter ((uint)this.Width, (uint)this.Height, rnd, objectsMetrics);
 							break;
 
-						case 6:
-						case 7:
+						case LogoDrawerObjectTypes.Pictures:
+						case LogoDrawerObjectTypes.RotatingPictures:
 							objects[i] = new LogoDrawerPicture ((uint)this.Width, (uint)this.Height,
 								rnd, objectsMetrics, Path.GetDirectoryName (OFConfig.FileName) + "\\" +
 								Path.GetFileNameWithoutExtension (OFConfig.FileName));
@@ -974,7 +1001,7 @@ namespace ESHQSetupStub
 
 			try
 				{
-				objectsMetrics.ObjectsType = byte.Parse (metrics1[0]);
+				objectsMetrics.ObjectsType = (LogoDrawerObjectTypes)byte.Parse (metrics1[0]);
 				err--;	// -108
 				objectsMetrics.ObjectsCount = byte.Parse (metrics1[1]);
 				err--;

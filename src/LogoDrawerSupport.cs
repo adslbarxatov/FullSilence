@@ -409,7 +409,7 @@ namespace ESHQSetupStub
 		/// <summary>
 		/// Тип объектов
 		/// </summary>
-		public byte ObjectsType;
+		public LogoDrawerObjectTypes ObjectsType;
 
 		/// <summary>
 		/// Количество одновременно существующих объектов
@@ -496,6 +496,57 @@ namespace ESHQSetupStub
 		/// Случайная
 		/// </summary>
 		Random = 0
+		}
+
+	/// <summary>
+	/// Возвожные типы генерируемых объектов
+	/// </summary>
+	public enum LogoDrawerObjectTypes
+		{
+		/// <summary>
+		/// Сферы
+		/// </summary>
+		Spheres = 0,
+
+		/// <summary>
+		/// Многоугольники
+		/// </summary>
+		Polygons = 4,
+
+		/// <summary>
+		/// Звёзды
+		/// </summary>
+		Stars = 5,
+
+		/// <summary>
+		/// Картинки
+		/// </summary>
+		Pictures = 7,
+
+		/// <summary>
+		/// Буквы
+		/// </summary>
+		Letters = 8,
+
+		/// <summary>
+		/// Вращающиеся многоугольники
+		/// </summary>
+		RotatingPolygons = 1,
+
+		/// <summary>
+		/// Вращающиеся звёзды
+		/// </summary>
+		RotatingStars = 2,
+
+		/// <summary>
+		/// Вращающиеся картинки
+		/// </summary>
+		RotatingPictures = 6,
+
+		/// <summary>
+		/// Вращающиеся буквы
+		/// </summary>
+		RotatingLetters = 3,
 		}
 
 	/// <summary>
@@ -922,8 +973,6 @@ namespace ESHQSetupStub
 			metrics.StartupPosition = OldMetrics.StartupPosition;
 
 			metrics.ObjectsType = OldMetrics.ObjectsType;
-			if (metrics.ObjectsType > 7)
-				metrics.ObjectsType = 0;
 
 			metrics.ObjectsCount = OldMetrics.ObjectsCount;
 			if (metrics.ObjectsCount > 20)

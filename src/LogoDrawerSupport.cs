@@ -198,8 +198,8 @@ namespace ESHQSetupStub
 				case LogoDrawerObjectStartupPositions.LeftFlat:
 				case LogoDrawerObjectStartupPositions.Right:
 				case LogoDrawerObjectStartupPositions.RightFlat:
-					speedX = -((metrics.MinSpeed == metrics.MaxSpeed) ? (int)metrics.MinSpeed :
-						rnd.Next ((int)metrics.MinSpeed, (int)metrics.MaxSpeed + 1));
+					speedX = (metrics.MinSpeed == metrics.MaxSpeed) ? (int)metrics.MinSpeed :
+						rnd.Next ((int)metrics.MinSpeed, (int)metrics.MaxSpeed + 1);
 					speedY = 0;
 
 					if (LogoDrawerSupport.IsLeft (metrics.StartupPosition))
@@ -216,8 +216,9 @@ namespace ESHQSetupStub
 
 					if (!LogoDrawerSupport.IsFlat (metrics.StartupPosition))
 						endY = y = rnd.Next ((int)ScreenHeight + ρ) - ρ / 2;
+					//endY = y = (int)(ScreenHeight / 4);
 					else
-						endY = y = (int)ScreenHeight / 2;
+						endY = y = (int)(ScreenHeight * (1.0 - LogoDrawerSupport.TextFieldPart));
 					break;
 
 				case LogoDrawerObjectStartupPositions.Top:
@@ -258,7 +259,7 @@ namespace ESHQSetupStub
 					if (LogoDrawerSupport.IsCenter (metrics.StartupPosition))
 						{
 						x = (int)ScreenWidth / 2;
-						y = (int)ScreenHeight / 2;
+						y = (int)(ScreenHeight * (1.0 - LogoDrawerSupport.TextFieldPart));
 						}
 					else
 						{
@@ -499,7 +500,7 @@ namespace ESHQSetupStub
 		}
 
 	/// <summary>
-	/// Возвожные типы генерируемых объектов
+	/// Возможные типы генерируемых объектов
 	/// </summary>
 	public enum LogoDrawerObjectTypes
 		{
@@ -722,8 +723,7 @@ namespace ESHQSetupStub
 		/// <param name="ScreenHeight">Высота экрана</param>
 		/// <param name="Randomizer">Внешний ГПСЧ</param>
 		/// <param name="Metrics">Метрики генерации объекта</param>
-		/// <param name="SidesCount">Количество сторон многоугольника</param>
-		public LogoDrawerSquare (uint ScreenWidth, uint ScreenHeight, uint SidesCount, Random Randomizer, LogoDrawerObjectMetrics Metrics)
+		public LogoDrawerSquare (uint ScreenWidth, uint ScreenHeight, Random Randomizer, LogoDrawerObjectMetrics Metrics)
 			{
 			// Контроль
 			LogoDrawerObjectMetrics metrics = LogoDrawerSupport.AlingMetrics (Metrics);
@@ -732,8 +732,7 @@ namespace ESHQSetupStub
 			rnd = Randomizer;
 			star = metrics.AsStars;
 			rotation = metrics.Rotation;
-
-			sidesCount = (SidesCount < 3) ? 4 : SidesCount;
+			sidesCount = metrics.PolygonsSidesCount;
 			ρ = (metrics.MinSize == metrics.MaxSize) ? (int)metrics.MinSize : rnd.Next ((int)metrics.MinSize, (int)metrics.MaxSize);
 
 			if (rotation)
@@ -782,7 +781,7 @@ namespace ESHQSetupStub
 					if (!LogoDrawerSupport.IsFlat (metrics.StartupPosition))
 						endY = y = rnd.Next ((int)ScreenHeight + 2 * ρ) - ρ;
 					else
-						endY = y = (int)ScreenHeight / 2;
+						endY = y = (int)(ScreenHeight * (1.0 - LogoDrawerSupport.TextFieldPart));
 					break;
 
 				case LogoDrawerObjectStartupPositions.Top:
@@ -823,7 +822,7 @@ namespace ESHQSetupStub
 					if (LogoDrawerSupport.IsCenter (metrics.StartupPosition))
 						{
 						x = (int)ScreenWidth / 2;
-						y = (int)ScreenHeight / 2;
+						y = (int)(ScreenHeight * (1.0 - LogoDrawerSupport.TextFieldPart));
 						}
 					else
 						{
@@ -937,7 +936,12 @@ namespace ESHQSetupStub
 		/// <summary>
 		/// Граница разрешения/запрета ускорения
 		/// </summary>
-		public static int AccelerationBorder = 0;
+		public const int AccelerationBorder = 0;
+
+		/// <summary>
+		/// Доля поля текста
+		/// </summary>
+		public const double TextFieldPart = 3.0 / 8.0;				// Часть поля отрисовки, занимаемая текстом
 
 		/// <summary>
 		/// Метод приводит исходные метрики объекта к допустимым диапазонам
@@ -1213,7 +1217,7 @@ namespace ESHQSetupStub
 					if (!LogoDrawerSupport.IsFlat (metrics.StartupPosition))
 						endY = y = rnd.Next ((int)ScreenHeight + sourceImage.Height) - sourceImage.Height / 2;
 					else
-						endY = y = (int)ScreenHeight / 2;
+						endY = y = (int)(ScreenHeight * (1.0 - LogoDrawerSupport.TextFieldPart));
 					break;
 
 				case LogoDrawerObjectStartupPositions.Top:
@@ -1254,7 +1258,7 @@ namespace ESHQSetupStub
 					if (LogoDrawerSupport.IsCenter (metrics.StartupPosition))
 						{
 						x = (int)ScreenWidth / 2;
-						y = (int)ScreenHeight / 2;
+						y = (int)(ScreenHeight * (1.0 - LogoDrawerSupport.TextFieldPart));
 						}
 					else
 						{
@@ -1493,7 +1497,7 @@ namespace ESHQSetupStub
 			try
 				{
 				string[] files = Directory.GetFiles (PicturesPath);
-				Bitmap b = (Bitmap)Bitmap.FromFile (files[rnd.Next (files.Length)]);
+				Bitmap b = (Bitmap)Bitmap.FromFile (files[(files.Length > 1) ? rnd.Next (files.Length) : 0]);
 				int size = rnd.Next ((int)metrics.MinSize, (int)metrics.MaxSize);
 				Bitmap b2 = new Bitmap (b, (int)((double)size * (double)b.Width / (double)b.Height), size);
 
@@ -1537,7 +1541,7 @@ namespace ESHQSetupStub
 					if (!LogoDrawerSupport.IsFlat (metrics.StartupPosition))
 						endY = y = rnd.Next ((int)ScreenHeight + sourceImage.Height) - sourceImage.Height / 2;
 					else
-						endY = y = (int)ScreenHeight / 2;
+						endY = y = (int)(ScreenHeight * (1.0 - LogoDrawerSupport.TextFieldPart));
 					break;
 
 				case LogoDrawerObjectStartupPositions.Top:
@@ -1578,7 +1582,7 @@ namespace ESHQSetupStub
 					if (LogoDrawerSupport.IsCenter (metrics.StartupPosition))
 						{
 						x = (int)ScreenWidth / 2;
-						y = (int)ScreenHeight / 2;
+						y = (int)(ScreenHeight * (1.0 - LogoDrawerSupport.TextFieldPart));
 						}
 					else
 						{

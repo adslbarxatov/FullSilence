@@ -23,7 +23,6 @@ namespace ESHQSetupStub
 		private const uint generalStep = 3;						// Длительность главного шага отображения
 		private string commandLine;								// Параметры командной строки
 		private ParametersPicker pp;							// Форма запроса параметров работы отрисовщика
-		private double textFieldPart = 3.0 / 8.0;				// Часть поля отрисовки, занимаемая текстом
 
 		// Текст
 		private List<List<LogoDrawerString>> mainStringsSet = new List<List<LogoDrawerString>> ();		// Основной текст
@@ -299,7 +298,7 @@ namespace ESHQSetupStub
 						SizeF sz = gr.MeasureString (signatureStringsSet[0][0].StringText, signatureStringsSet[0][0].StringFont);
 
 						lineLeft = drawPoint.X = this.Width - lineLeft - (int)sz.Width;
-						drawPoint.Y = (int)(textFieldPart * this.Height) -
+						drawPoint.Y = (int)(LogoDrawerSupport.TextFieldPart * this.Height) -
 							(signatureStringsSet[0][0].StringText.Contains ("\n") ? 3 : 2) * lineFeed;
 
 						currentPhase++;
@@ -368,10 +367,10 @@ namespace ESHQSetupStub
 
 			Bitmap b = (Bitmap)layers[4].Layer.Clone ();
 			layers[4].Dispose ();
-			layers[4] = new LogoDrawerLayer (0, (uint)((1.0 - textFieldPart) * this.Height),
-				(uint)this.Width, (uint)(textFieldPart * this.Height));
+			layers[4] = new LogoDrawerLayer (0, (uint)((1.0 - LogoDrawerSupport.TextFieldPart) * this.Height),
+				(uint)this.Width, (uint)(LogoDrawerSupport.TextFieldPart * this.Height));
 
-			layers[4].Descriptor.DrawImage (b, new Rectangle (0, 0, this.Width, (int)(textFieldPart * this.Height)),
+			layers[4].Descriptor.DrawImage (b, new Rectangle (0, 0, this.Width, (int)(LogoDrawerSupport.TextFieldPart * this.Height)),
 				0, 0, b.Width, b.Height, GraphicsUnit.Pixel, fadeAttributes);
 			b.Dispose ();
 
@@ -394,15 +393,16 @@ namespace ESHQSetupStub
 		// Отрисовка основного градиента
 		private void MakeGradient ()
 			{
-			layers[3].Descriptor.FillRectangle (plotGradient1Brush, 0, steps, this.Width, (uint)(textFieldPart * this.Height) - steps);
+			layers[3].Descriptor.FillRectangle (plotGradient1Brush, 0, steps,
+				this.Width, (uint)(LogoDrawerSupport.TextFieldPart * this.Height) - steps);
 
-			if (steps++ >= 150)
+			if (steps++ >= 80)
 				{
 				drawPoint.X = lineLeft;		// Установка начальной позиции текста
 				drawPoint.Y = lineTop;
 
-				layers.Add (new LogoDrawerLayer (0, (uint)((1 - textFieldPart) * this.Height),
-					(uint)this.Width, (uint)(textFieldPart * this.Height)));				// Слой текста
+				layers.Add (new LogoDrawerLayer (0, (uint)((1 - LogoDrawerSupport.TextFieldPart) * this.Height),
+					(uint)this.Width, (uint)(LogoDrawerSupport.TextFieldPart * this.Height)));		// Слой текста
 
 				steps = 0;
 				currentPhase++;
@@ -425,8 +425,8 @@ namespace ESHQSetupStub
 
 				if (currentPhase == Phases.LogoFading)
 					{
-					layers.Add (new LogoDrawerLayer (0, (uint)((1 - textFieldPart) * this.Height),
-						(uint)this.Width, (uint)(textFieldPart * this.Height)));					// Слой градиента
+					layers.Add (new LogoDrawerLayer (0, (uint)((1 - LogoDrawerSupport.TextFieldPart) * this.Height),
+						(uint)this.Width, (uint)(LogoDrawerSupport.TextFieldPart * this.Height)));			// Слой градиента
 					}
 				if (currentPhase == Phases.EndingFading2)
 					{
@@ -462,15 +462,13 @@ namespace ESHQSetupStub
 					case LogoDrawerObjectTypes.RotatingPolygons:
 						objectsMetrics.AsStars = false;
 						objectsMetrics.Rotation = true;
-						objects.Add (new LogoDrawerSquare ((uint)this.Width, (uint)this.Height, objectsMetrics.PolygonsSidesCount,
-							rnd, objectsMetrics));
+						objects.Add (new LogoDrawerSquare ((uint)this.Width, (uint)this.Height, rnd, objectsMetrics));
 						break;
 
 					case LogoDrawerObjectTypes.RotatingStars:
 						objectsMetrics.AsStars = true;
 						objectsMetrics.Rotation = true;
-						objects.Add (new LogoDrawerSquare ((uint)this.Width, (uint)this.Height, objectsMetrics.PolygonsSidesCount,
-							rnd, objectsMetrics));
+						objects.Add (new LogoDrawerSquare ((uint)this.Width, (uint)this.Height, rnd, objectsMetrics));
 						break;
 
 					case LogoDrawerObjectTypes.RotatingLetters:
@@ -486,15 +484,13 @@ namespace ESHQSetupStub
 					case LogoDrawerObjectTypes.Polygons:
 						objectsMetrics.AsStars = false;
 						objectsMetrics.Rotation = false;
-						objects.Add (new LogoDrawerSquare ((uint)this.Width, (uint)this.Height, objectsMetrics.PolygonsSidesCount,
-							rnd, objectsMetrics));
+						objects.Add (new LogoDrawerSquare ((uint)this.Width, (uint)this.Height, rnd, objectsMetrics));
 						break;
 
 					case LogoDrawerObjectTypes.Stars:
 						objectsMetrics.AsStars = true;
 						objectsMetrics.Rotation = false;
-						objects.Add (new LogoDrawerSquare ((uint)this.Width, (uint)this.Height, objectsMetrics.PolygonsSidesCount,
-							rnd, objectsMetrics));
+						objects.Add (new LogoDrawerSquare ((uint)this.Width, (uint)this.Height, rnd, objectsMetrics));
 						break;
 
 					case LogoDrawerObjectTypes.RotatingPictures:
@@ -598,7 +594,7 @@ namespace ESHQSetupStub
 			Point[] frame1 = new Point[] {
 				new Point (0, 0),
 				new Point ((int)(150 * scale), (int)(130 * scale)),
- 				new Point ((int)(150 * scale), (int)(270 * scale)),
+				new Point ((int)(150 * scale), (int)(270 * scale)),
 				new Point (0, (int)(400 * scale))
 				};
 			g.FillPolygon (logoForeBrush, frame1);
@@ -606,7 +602,7 @@ namespace ESHQSetupStub
 			Point[] frame2 = new Point[] {
 				new Point ((int)(180 * scale), (int)(130 * scale)),
 				new Point ((int)(230 * scale), (int)(130 * scale)),
- 				new Point ((int)(230 * scale), (int)(270 * scale)),
+				new Point ((int)(230 * scale), (int)(270 * scale)),
 				new Point ((int)(180 * scale), (int)(270 * scale))
 				};
 			g.FillPolygon (logoForeBrush, frame2);
@@ -664,7 +660,7 @@ namespace ESHQSetupStub
 			g = Graphics.FromImage (b);
 
 			// Надпись
-			g.DrawString ("FS", logoFont, logoForeBrush, 0, 0);
+			g.DrawString ("FS", logoFont, logoBackBrush, 0, 0);
 
 			// Добавление
 			logo.Add ((Bitmap)b.Clone ());
@@ -675,14 +671,14 @@ namespace ESHQSetupStub
 			// Версия
 
 			// Расчёт размера надписи
-			sz = gr.MeasureString ("v " + ProgramDescription.AssemblyVersion.Substring (0, 3), versionFont);
+			sz = gr.MeasureString ("v " + ProgramDescription.AssemblyVersion.Substring (0, 5), versionFont);
 
 			// Создание полотна
 			b = new Bitmap ((int)sz.Width + 1, (int)sz.Height + 1);
 			g = Graphics.FromImage (b);
 
 			// Надпись
-			g.DrawString ("v " + ProgramDescription.AssemblyVersion.Substring (0, 3), versionFont, logoForeBrush, 0, 0);
+			g.DrawString ("v " + ProgramDescription.AssemblyVersion.Substring (0, 5), versionFont, logoForeBrush, 0, 0);
 
 			// Добавление
 			logo.Add ((Bitmap)b.Clone ());
@@ -732,8 +728,7 @@ namespace ESHQSetupStub
 						case LogoDrawerObjectTypes.Stars:
 						case LogoDrawerObjectTypes.RotatingPolygons:
 						case LogoDrawerObjectTypes.RotatingStars:
-							objects[i] = new LogoDrawerSquare ((uint)this.Width, (uint)this.Height, objectsMetrics.PolygonsSidesCount,
-								rnd, objectsMetrics);
+							objects[i] = new LogoDrawerSquare ((uint)this.Width, (uint)this.Height, rnd, objectsMetrics);
 							break;
 
 						case LogoDrawerObjectTypes.Letters:
@@ -776,7 +771,7 @@ namespace ESHQSetupStub
 				double soundLength = ((double)soundEndFrame - (double)soundStartFrame) / vm.FPS;
 
 				gr.FillRectangle (logoBackBrush, 0, 0, this.Width, this.Height);
-				string s = "Phase: " + currentPhase.ToString () + "\nFrame: " + savingLayersCounter.ToString () +
+				string s = "- Rendering -\nPhase: " + currentPhase.ToString () + "\nFrames: " + savingLayersCounter.ToString () +
 					"\nVerses left: " + mainStringsSet.Count.ToString () +
 					"\nSound at: " + ((soundAt > 0.0) ? (soundAt.ToString ("F3") + " s") : "<testing...>") +
 					"\nSound length: " + ((soundLength > 0.0) ? (soundLength.ToString ("F3") + " s") : "<testing...>");

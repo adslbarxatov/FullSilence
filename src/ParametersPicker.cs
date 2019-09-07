@@ -26,6 +26,7 @@ namespace ESHQSetupStub
 			{
 			writeFramesToAVI = WriteToAVI.Checked;
 			playAttachedAmbience = PlayAmbience.Checked;
+			adjustShowParameters = AdjustParameters.Checked;
 			this.Close ();
 			}
 
@@ -52,5 +53,31 @@ namespace ESHQSetupStub
 				}
 			}
 		private bool playAttachedAmbience = false;
+
+		/// <summary>
+		/// Возвращает флаг настройки параметров демонстрации
+		/// </summary>
+		public bool AdjustShowParameters
+			{
+			get
+				{
+				return adjustShowParameters;
+				}
+			}
+		private bool adjustShowParameters = false;
+
+		// Установка флага настройки параметров
+		private void AdjustParameters_CheckedChanged (object sender, EventArgs e)
+			{
+			if (AdjustParameters.Checked)
+				{
+				WriteToAVI.Checked = WriteToAVI.Enabled =
+					PlayAmbience.Checked = PlayAmbience.Enabled = false;
+				}
+			else
+				{
+				WriteToAVI.Enabled = PlayAmbience.Enabled = true;
+				}
+			}
 		}
 	}

@@ -216,7 +216,6 @@ namespace ESHQSetupStub
 
 					if (!LogoDrawerSupport.IsFlat (metrics.StartupPosition))
 						endY = y = rnd.Next ((int)ScreenHeight + ρ) - ρ / 2;
-					//endY = y = (int)(ScreenHeight / 4);
 					else
 						endY = y = (int)(ScreenHeight * (1.0 - LogoDrawerSupport.TextFieldPart));
 					break;
@@ -254,6 +253,9 @@ namespace ESHQSetupStub
 							speedY = -rnd.Next (LogoDrawerSupport.AccelerationBorder + 1);
 						else
 							speedY = rnd.Next (-(int)metrics.MinSpeed, (int)metrics.MaxSpeed + 1);
+
+						if (metrics.MaxSpeed == 0)
+							break;
 						}
 
 					if (LogoDrawerSupport.IsCenter (metrics.StartupPosition))
@@ -820,6 +822,9 @@ namespace ESHQSetupStub
 							speedY = -rnd.Next (LogoDrawerSupport.AccelerationBorder + 1);
 						else
 							speedY = rnd.Next (-(int)metrics.MinSpeed, (int)metrics.MaxSpeed + 1);
+
+						if (metrics.MaxSpeed == 0)
+							break;
 						}
 
 					if (LogoDrawerSupport.IsCenter (metrics.StartupPosition))
@@ -967,32 +972,42 @@ namespace ESHQSetupStub
 
 			metrics.MinSize = (OldMetrics.MinSize > OldMetrics.MaxSize) ? OldMetrics.MaxSize : OldMetrics.MinSize;
 			metrics.MaxSize = (OldMetrics.MinSize > OldMetrics.MaxSize) ? OldMetrics.MinSize : OldMetrics.MaxSize;
-			if (metrics.MinSize < 1)
-				metrics.MinSize = 1;
+			if (metrics.MinSize < MinObjectSize)
+				metrics.MinSize = MinObjectSize;
+			if (metrics.MinSize > MaxObjectSize)
+				metrics.MinSize = MaxObjectSize;
 			if (metrics.MaxSize < metrics.MinSize)
 				metrics.MaxSize = metrics.MinSize;
+			if (metrics.MaxSize > MaxObjectSize)
+				metrics.MaxSize = MaxObjectSize;
 
 			metrics.MinSpeed = (OldMetrics.MinSpeed > OldMetrics.MaxSpeed) ? OldMetrics.MaxSpeed : OldMetrics.MinSpeed;
 			metrics.MaxSpeed = (OldMetrics.MinSpeed > OldMetrics.MaxSpeed) ? OldMetrics.MinSpeed : OldMetrics.MaxSpeed;
-			if (metrics.MinSpeed < 1)
-				metrics.MinSpeed = 1;
+			if (metrics.MinSpeed < MinObjectSpeed)
+				metrics.MinSpeed = MinObjectSpeed;
+			if (metrics.MinSpeed > MaxObjectSpeed)
+				metrics.MinSpeed = MaxObjectSpeed;
 			if (metrics.MaxSpeed < metrics.MinSpeed)
 				metrics.MaxSpeed = metrics.MinSpeed;
+			if (metrics.MaxSpeed > MaxObjectSpeed)
+				metrics.MaxSpeed = MaxObjectSpeed;
 
 			metrics.MaxSpeedFluctuation = OldMetrics.MaxSpeedFluctuation;
+			if (metrics.MaxSpeedFluctuation > MaxObjectSpeed)
+				metrics.MaxSpeedFluctuation = MaxObjectSpeed;
 			metrics.StartupPosition = OldMetrics.StartupPosition;
 
 			metrics.ObjectsType = OldMetrics.ObjectsType;
 
 			metrics.ObjectsCount = OldMetrics.ObjectsCount;
-			if (metrics.ObjectsCount > 20)
-				metrics.ObjectsCount = 20;
+			if (metrics.ObjectsCount > MaxObjectsCount)
+				metrics.ObjectsCount = (byte)MaxObjectsCount;
 
 			metrics.PolygonsSidesCount = OldMetrics.PolygonsSidesCount;
-			if (metrics.PolygonsSidesCount > 16)
-				metrics.PolygonsSidesCount = 16;
-			if (metrics.PolygonsSidesCount < 3)
-				metrics.PolygonsSidesCount = 3;
+			if (metrics.PolygonsSidesCount > MaxPolygonsSidesCount)
+				metrics.PolygonsSidesCount = (byte)MaxPolygonsSidesCount;
+			if (metrics.PolygonsSidesCount < MinPolygonsSidesCount)
+				metrics.PolygonsSidesCount = (byte)MinPolygonsSidesCount;
 
 			metrics.KeepTracks = OldMetrics.KeepTracks;
 			metrics.AsStars = OldMetrics.AsStars;
@@ -1000,13 +1015,63 @@ namespace ESHQSetupStub
 			metrics.Acceleration = OldMetrics.Acceleration;
 
 			metrics.Enlarging = OldMetrics.Enlarging;
-			/*if (metrics.Enlarging < 0)
-				metrics.Enlarging = -1;
-			if (metrics.Enlarging > 0)
-				metrics.Enlarging = 1;*/
+			if (metrics.Enlarging < -MaxEnlarge)
+				metrics.Enlarging = -MaxEnlarge;
+			if (metrics.Enlarging > MaxEnlarge)
+				metrics.Enlarging = MaxEnlarge;
 
 			return metrics;
 			}
+
+		/// <summary>
+		/// Минимально допустимый размер шрифта
+		/// </summary>
+		public const uint MinFontSize = 10;
+
+		/// <summary>
+		/// Максимально допустимый размер шрифта
+		/// </summary>
+		public const uint MaxFontSize = 100;
+
+		/// <summary>
+		/// Максимально допустимое количество объектов
+		/// </summary>
+		public const uint MaxObjectsCount = 20;
+
+		/// <summary>
+		/// Минимально допустимое количество сторон многоугольников
+		/// </summary>
+		public const uint MinPolygonsSidesCount = 3;
+
+		/// <summary>
+		/// Максимально допустимое количество сторон многоугольников
+		/// </summary>
+		public const uint MaxPolygonsSidesCount = 16;
+
+		/// <summary>
+		/// Максимально допустимый коэффициент увеличения / уменьшения
+		/// </summary>
+		public const int MaxEnlarge = 10;
+
+		/// <summary>
+		/// Минимально допустимая скорость объекта
+		/// </summary>
+		public const uint MinObjectSpeed = 0;
+
+		/// <summary>
+		/// Максимально допустимая скорость объекта
+		/// </summary>
+		public const uint MaxObjectSpeed = 20;
+
+		/// <summary>
+		/// Минимально допустимый размер объекта
+		/// </summary>
+		public const uint MinObjectSize = 1;
+
+		/// <summary>
+		/// Максимально допустимый размер объекта
+		/// </summary>
+		public const uint MaxObjectSize = 400;
 
 		/// <summary>
 		/// Метод переводит градусы в радианы
@@ -1259,6 +1324,9 @@ namespace ESHQSetupStub
 							speedY = -rnd.Next (LogoDrawerSupport.AccelerationBorder + 1);
 						else
 							speedY = rnd.Next (-(int)metrics.MinSpeed, (int)metrics.MaxSpeed + 1);
+
+						if (metrics.MaxSpeed == 0)
+							break;
 						}
 
 					if (LogoDrawerSupport.IsCenter (metrics.StartupPosition))
@@ -1278,7 +1346,7 @@ namespace ESHQSetupStub
 					endX = (speedX > 0) ? ((int)ScreenWidth + sourceImage.Width + speedX + maxFluctuation) :
 						(-sourceImage.Width + speedX - maxFluctuation);
 					endY = (speedY > 0) ? ((int)ScreenHeight + sourceImage.Height + speedY + maxFluctuation) :
-						(-sourceImage.Height + -speedY - maxFluctuation);
+						(-sourceImage.Height + speedY - maxFluctuation);
 
 					break;
 				}
@@ -1588,6 +1656,9 @@ namespace ESHQSetupStub
 							speedY = -rnd.Next (LogoDrawerSupport.AccelerationBorder + 1);
 						else
 							speedY = rnd.Next (-(int)metrics.MinSpeed, (int)metrics.MaxSpeed + 1);
+
+						if (metrics.MaxSpeed == 0)
+							break;
 						}
 
 					if (LogoDrawerSupport.IsCenter (metrics.StartupPosition))

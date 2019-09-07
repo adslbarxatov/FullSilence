@@ -29,6 +29,9 @@ namespace ESHQSetupStub
 		private List<List<LogoDrawerString>> signatureStringsSet = new List<List<LogoDrawerString>> ();	// Подпись
 
 		private char[] splitters = new char[] { ' ', '\t' };	// Спиттеры для текста
+		private char signatureMarker = '^',						// Маркеры фрагментов текста
+			textMarker = '#',
+			colorMarker = '&';
 		private Point drawPoint;								// Текущая позиция отрисовки текста
 		private int lineFeed,									// Высота строки текста расширенного режима
 			lineLeft,											// Начало и конец строки текста расширенного режима
@@ -143,11 +146,13 @@ namespace ESHQSetupStub
 			gr = Graphics.FromHwnd (this.Handle);
 
 			// Настройка диалогов
-			OFConfig.Title = "Select configuration for show";
-			string cfgExtension = ".fsc" + ProgramDescription.AssemblyVersion.Replace (".", "").Substring (0, 2);
-			OFConfig.Filter = "Configurations (*" + cfgExtension + ")|*" + cfgExtension;
-			OFConfig.InitialDirectory = Application.StartupPath;
-			OFConfig.FileName = commandLine;
+			OFConfig.Title = "Select configuration for showing";
+			SFConfig.Title = "Specify configuration name";
+
+			string cfgExtension = ".fss" + ProgramDescription.AssemblyVersion.Replace (".", "").Substring (0, 2);
+			OFConfig.Filter = SFConfig.Filter = "FullSilence shows (*" + cfgExtension + ")|*" + cfgExtension;
+			OFConfig.InitialDirectory = SFConfig.InitialDirectory = Application.StartupPath;
+			OFConfig.FileName = SFConfig.FileName = commandLine;
 
 			SFVideo.Title = "Select placement of new video";
 			SFVideo.Filter = "Audio-Video Interchange video format (*.avi)|(*.avi)";
@@ -234,9 +239,122 @@ namespace ESHQSetupStub
 			fadeAttributes = new ImageAttributes ();
 			fadeAttributes.SetColorMatrix (fadeMatrix, ColorMatrixFlag.Default, ColorAdjustType.Bitmap);
 
+			// Настройка параметров демонстрации
+			if (pp.AdjustShowParameters)
+				{
+				InitializeSettingsFrame ();
+				SettingsGroup.Enabled = SettingsGroup.Visible = true;
+				}
+
 			// Запуск
-			ExtendedTimer.Enabled = true;
+			else
+				{
+				ExtendedTimer.Enabled = true;
+				}
 			this.Activate ();
+			}
+
+		// Инициализация поля настроек демонстрации
+		private void InitializeSettingsFrame ()
+			{
+			// Цвета
+			LogoForeground.BackColor = logoForeBrush.Color;
+			LogoForeground.ForeColor = GetNearbyColor (LogoForeground.ForeColor);
+			LogoBackground.BackColor = logoBackBrush.Color;
+			LogoBackground.ForeColor = GetNearbyColor (LogoBackground.BackColor);
+			MainGradient.BackColor = Color.FromArgb (255, plotGradient1Brush.Color);
+			MainGradient.ForeColor = GetNearbyColor (MainGradient.BackColor);
+			MainText.BackColor = Color.FromArgb (255, textBrush.Color);
+			MainText.ForeColor = GetNearbyColor (MainText.BackColor);
+			FirstMainBack.BackColor = Color.FromArgb (255, plotBackBrushes[0].Color);
+			FirstMainBack.ForeColor = GetNearbyColor (FirstMainBack.BackColor);
+
+			// Параметры
+			TextFontSizeField.Minimum = SignatureFontSizeField.Minimum = LogoDrawerSupport.MinFontSize;
+			TextFontSizeField.Maximum = SignatureFontSizeField.Maximum = LogoDrawerSupport.MaxFontSize;
+			TextFontSizeField.Value = textFontSize;
+			SignatureFontSizeField.Value = signatureFontSize;
+
+			CenterTextAlign.Checked = centerizeText;
+
+			// Метрики
+			for (int i = 0; i <= 8; i++)
+				ObjectsTypeCombo.Items.Add (((LogoDrawerObjectTypes)i).ToString ());
+			if ((uint)objectsMetrics.ObjectsType >= ObjectsTypeCombo.Items.Count)
+				ObjectsTypeCombo.SelectedIndex = 0;
+			else
+				ObjectsTypeCombo.SelectedIndex = (int)objectsMetrics.ObjectsType;
+
+			ObjectsCountField.Maximum = LogoDrawerSupport.MaxObjectsCount;
+			ObjectsCountField.Value = objectsMetrics.ObjectsCount;
+
+			SidesCountField.Minimum = LogoDrawerSupport.MinPolygonsSidesCount;
+			SidesCountField.Maximum = LogoDrawerSupport.MaxPolygonsSidesCount;
+			SidesCountField.Value = objectsMetrics.PolygonsSidesCount;
+
+			for (int i = 0; i <= 8; i++)
+				StartupSideCombo.Items.Add (((LogoDrawerObjectStartupPositions)i).ToString ());
+			if ((uint)objectsMetrics.StartupPosition >= StartupSideCombo.Items.Count)
+				StartupSideCombo.SelectedIndex = 0;
+			else
+				StartupSideCombo.SelectedIndex = (int)objectsMetrics.StartupPosition;
+
+			KeepTracks.Checked = objectsMetrics.KeepTracks;
+			Acceleration.Checked = objectsMetrics.Acceleration;
+
+			EnlargingCoeff.Minimum = -LogoDrawerSupport.MaxEnlarge;
+			EnlargingCoeff.Maximum = LogoDrawerSupport.MaxEnlarge;
+			EnlargingCoeff.Value = objectsMetrics.Enlarging;
+
+			MinSpeedField.Minimum = MaxSpeedField.Minimum = LogoDrawerSupport.MinObjectSpeed;
+			MinSpeedField.Maximum = MaxSpeedField.Maximum = SpeedFluctuationField.Maximum = LogoDrawerSupport.MaxObjectSpeed;
+			MinSpeedField.Value = objectsMetrics.MinSpeed;
+			MaxSpeedField.Value = objectsMetrics.MaxSpeed;
+			SpeedFluctuationField.Value = objectsMetrics.MaxSpeedFluctuation;
+
+			MinSizeField.Minimum = MaxSizeField.Minimum = LogoDrawerSupport.MinObjectSize;
+			MinSizeField.Maximum = MaxSizeField.Maximum = LogoDrawerSupport.MaxObjectSize;
+			MinSizeField.Value = objectsMetrics.MinSize;
+			MaxSizeField.Value = objectsMetrics.MaxSize;
+
+			MinColor.BackColor = Color.FromArgb (objectsMetrics.MinRed, objectsMetrics.MinGreen, objectsMetrics.MinBlue);
+			MinColor.ForeColor = GetNearbyColor (MinColor.BackColor);
+			MaxColor.BackColor = Color.FromArgb (objectsMetrics.MaxRed, objectsMetrics.MaxGreen, objectsMetrics.MaxBlue);
+			MaxColor.ForeColor = GetNearbyColor (MaxColor.BackColor);
+
+			// Текст
+			SignatureText.Text = signatureStringsSet[0][0].StringText.Replace ('\n', '|');
+
+			for (int i = 0; i < mainStringsSet.Count; i++)
+				{
+				// Сменяемый цвет
+				if (plotBackBrushes[i + 1].Color.ToArgb () != plotBackBrushes[i].Color.ToArgb ())
+					{
+					MainTextField.Text += (colorMarker.ToString () + plotBackBrushes[i + 1].Color.R.ToString () +
+						" " + plotBackBrushes[i + 1].Color.G.ToString () + " " + plotBackBrushes[i + 1].Color.B.ToString () + "\r\n");
+					}
+
+				// Строки текста
+				for (int j = 0; j < mainStringsSet[i].Count; j++)
+					{
+					if (j == mainStringsSet[i].Count - 1)
+						MainTextField.Text += textMarker.ToString ();
+					MainTextField.Text += (mainStringsSet[i][j].StringText + "\r\n");
+					}
+
+				MainTextField.Text += "\r\n";
+				}
+
+			// Завершено
+			}
+
+		// Метод формирует цвет, достоверно отличающийся от указанного
+		private Color GetNearbyColor (Color OldColor)
+			{
+			/*int r = (OldColor.R > 127) ? (OldColor.R - 128) : (OldColor.R + 128),
+				g = (OldColor.G > 127) ? (OldColor.G - 128) : (OldColor.G + 128),
+				b = (OldColor.B > 127) ? (OldColor.B - 128) : (OldColor.B + 128);*/
+			return (OldColor.R + OldColor.G + OldColor.B > 128 * 3) ? Color.FromArgb (0, 0, 0) : Color.FromArgb (255, 255, 255);
 			}
 
 		// Таймер расширенного режима отображения
@@ -675,14 +793,17 @@ namespace ESHQSetupStub
 			// Версия
 
 			// Расчёт размера надписи
-			sz = gr.MeasureString ("v " + ProgramDescription.AssemblyVersion.Substring (0, 5), versionFont);
+			string ver = ProgramDescription.AssemblyVersion.Replace ("0", "");
+			while (ver.Substring (ver.Length - 1, 1) == ".")
+				ver = ver.Substring (0, ver.Length - 1);
+			sz = gr.MeasureString ("v " + ver, versionFont);
 
 			// Создание полотна
 			b = new Bitmap ((int)sz.Width + 1, (int)sz.Height + 1);
 			g = Graphics.FromImage (b);
 
 			// Надпись
-			g.DrawString ("v " + ProgramDescription.AssemblyVersion.Substring (0, 5), versionFont, logoForeBrush, 0, 0);
+			g.DrawString ("v " + ver, versionFont, logoForeBrush, 0, 0);
 
 			// Добавление
 			logo.Add ((Bitmap)b.Clone ());
@@ -972,17 +1093,17 @@ namespace ESHQSetupStub
 				err--;
 
 				textFontSize = uint.Parse (fontSizes[0]);
-				if (textFontSize < 10)
-					textFontSize = 10;
-				if (textFontSize > 100)
-					textFontSize = 100;
+				if (textFontSize < LogoDrawerSupport.MinFontSize)
+					textFontSize = LogoDrawerSupport.MinFontSize;
+				if (textFontSize > LogoDrawerSupport.MaxFontSize)
+					textFontSize = LogoDrawerSupport.MaxFontSize;
 				err--;	// -106
 
 				signatureFontSize = uint.Parse (fontSizes[1]);
-				if (signatureFontSize < 10)
-					signatureFontSize = 10;
-				if (signatureFontSize > 100)
-					signatureFontSize = 100;
+				if (signatureFontSize < LogoDrawerSupport.MinFontSize)
+					signatureFontSize = LogoDrawerSupport.MinFontSize;
+				if (signatureFontSize > LogoDrawerSupport.MaxFontSize)
+					signatureFontSize = LogoDrawerSupport.MaxFontSize;
 				err--;
 
 				centerizeText = (uint.Parse (fontSizes[2]) != 0);
@@ -1071,7 +1192,7 @@ namespace ESHQSetupStub
 
 			// Пропуск настроек
 			string s;
-			while (((s = SR.ReadLine ()).IndexOf ('^') != 0) && !SR.EndOfStream)
+			while (((s = SR.ReadLine ()).IndexOf (signatureMarker) != 0) && !SR.EndOfStream)
 				;
 
 			// Получение подписи
@@ -1092,7 +1213,7 @@ namespace ESHQSetupStub
 					{
 					continue;
 					}
-				else if (s[0] == '&')
+				else if (s[0] == colorMarker)
 					{
 					string[] newColor = s.Substring (1).Split (splitters, StringSplitOptions.RemoveEmptyEntries);
 					try
@@ -1104,7 +1225,7 @@ namespace ESHQSetupStub
 						{
 						}
 					}
-				else if (s[0] == '#')
+				else if (s[0] == textMarker)
 					{
 					uint length = 0;
 					for (int i = 0; i < mainStringsSet[mainStringsSet.Count - 1].Count; i++)
@@ -1151,6 +1272,86 @@ namespace ESHQSetupStub
 				am.PlayAudio ();
 			else
 				vm.AddAudio (am);
+			}
+
+		// Выбор цветов
+		private void LogoForeground_Click (object sender, EventArgs e)
+			{
+			Button btn = (Button)sender;
+
+			ColorPicker.Color = btn.BackColor;
+			ColorPicker.ShowDialog ();
+			btn.BackColor = ColorPicker.Color;
+			btn.ForeColor = GetNearbyColor (btn.BackColor);
+			}
+
+		// Отмена сохранения
+		private void CancelShow_Click (object sender, EventArgs e)
+			{
+			if (MessageBox.Show ("Unsaved settings will be lost. Exit?", ProgramDescription.AssemblyTitle,
+				MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes)
+				this.Close ();
+			}
+
+		// Сохранение
+		private void SaveShow_Click (object sender, EventArgs e)
+			{
+			SFConfig.ShowDialog ();
+			}
+
+		private void SFConfig_FileOk (object sender, System.ComponentModel.CancelEventArgs e)
+			{
+			// Создание файла
+			FileStream FS = null;
+			try
+				{
+				FS = new FileStream (SFConfig.FileName, FileMode.Create);
+				}
+			catch
+				{
+				MessageBox.Show ("Failed to create file '" + SFConfig.FileName + "'", ProgramDescription.AssemblyTitle,
+					MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
+				return;
+				}
+			StreamWriter SW = new StreamWriter (FS, Encoding.GetEncoding (1251));
+
+			// Запись
+			SW.Write (LogoBackground.BackColor.R.ToString () + " " +
+				LogoBackground.BackColor.G.ToString () + " " + LogoBackground.BackColor.B.ToString () + "\n");
+			SW.Write (LogoForeground.BackColor.R.ToString () + " " +
+				LogoForeground.BackColor.G.ToString () + " " + LogoForeground.BackColor.B.ToString () + "\n");
+			SW.Write (FirstMainBack.BackColor.R.ToString () + " " +
+				FirstMainBack.BackColor.G.ToString () + " " + FirstMainBack.BackColor.B.ToString () + "\n");
+			SW.Write (MainGradient.BackColor.R.ToString () + " " +
+				MainGradient.BackColor.G.ToString () + " " + MainGradient.BackColor.B.ToString () + "\n");
+			SW.Write (MainText.BackColor.R.ToString () + " " +
+				MainText.BackColor.G.ToString () + " " + MainText.BackColor.B.ToString () + "\n");
+
+			SW.Write (TextFontSizeField.Value.ToString () + " " + SignatureFontSizeField.Value.ToString () + " " +
+				(CenterTextAlign.Checked ? "1" : "0") + "\n");
+
+			SW.Write (ObjectsTypeCombo.SelectedIndex.ToString () + " " + ObjectsCountField.Value.ToString () + " " +
+				SidesCountField.Value.ToString () + " " + StartupSideCombo.SelectedIndex.ToString () + " " +
+				(KeepTracks.Checked ? "1" : "0") + " " + (Acceleration.Checked ? "1" : "0") + " " +
+				EnlargingCoeff.Value.ToString () + "\n");
+
+			SW.Write (MinSpeedField.Value.ToString () + " " + MaxSpeedField.Value.ToString () + " " +
+				SpeedFluctuationField.Value.ToString () + "\n");
+			SW.Write (MinSizeField.Value.ToString () + " " + MaxSizeField.Value.ToString () + "\n");
+
+			SW.Write (MinColor.BackColor.R.ToString () + " " + MaxColor.BackColor.R.ToString () + "\n");
+			SW.Write (MinColor.BackColor.G.ToString () + " " + MaxColor.BackColor.G.ToString () + "\n");
+			SW.Write (MinColor.BackColor.B.ToString () + " " + MaxColor.BackColor.B.ToString () + "\n\n\n\n");
+
+			SW.Write (signatureMarker.ToString () + SignatureText.Text + "\n\n");
+			SW.Write (MainTextField.Text.Replace ("\r", "").Replace ("  ", " "));
+
+			// Завершено
+			SW.Close ();
+			FS.Close ();
+
+			if (AndExit.Checked)
+				this.Close ();
 			}
 		}
 	}

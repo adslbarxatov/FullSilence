@@ -45,6 +45,7 @@ namespace ESHQSetupStub
 		private List<SolidBrush> plotBackBrushes = new List<SolidBrush> ();
 		private Font logoFont, versionFont, textFont, signatureFont;
 		private uint textFontSize, signatureFontSize;
+		private bool centerizeText;
 		private Pen logoBackPen;
 		private Color currentColor;
 
@@ -249,7 +250,7 @@ namespace ESHQSetupStub
 					if (!vm.IsInited)
 						PlayAmbience ();
 
-					PrecacheLayers ();
+					PrepareLayers ();
 					break;
 
 				// Отрисовка фрагментов лого
@@ -367,7 +368,8 @@ namespace ESHQSetupStub
 
 			Bitmap b = (Bitmap)layers[4].Layer.Clone ();
 			layers[4].Dispose ();
-			layers[4] = new LogoDrawerLayer (0, (uint)((1.0 - LogoDrawerSupport.TextFieldPart) * this.Height),
+			layers[4] = new LogoDrawerLayer (0, (uint)((1.0 - LogoDrawerSupport.TextFieldPart) * this.Height *
+				(centerizeText ? 0.5 : 1.0)),
 				(uint)this.Width, (uint)(LogoDrawerSupport.TextFieldPart * this.Height));
 
 			layers[4].Descriptor.DrawImage (b, new Rectangle (0, 0, this.Width, (int)(LogoDrawerSupport.TextFieldPart * this.Height)),
@@ -394,14 +396,15 @@ namespace ESHQSetupStub
 		private void MakeGradient ()
 			{
 			layers[3].Descriptor.FillRectangle (plotGradient1Brush, 0, steps,
-				this.Width, (uint)(LogoDrawerSupport.TextFieldPart * this.Height) - steps);
+				this.Width, (uint)(LogoDrawerSupport.TextFieldPart * this.Height) - steps * (centerizeText ? 2 : 1));
 
 			if (steps++ >= 80)
 				{
 				drawPoint.X = lineLeft;		// Установка начальной позиции текста
 				drawPoint.Y = lineTop;
 
-				layers.Add (new LogoDrawerLayer (0, (uint)((1 - LogoDrawerSupport.TextFieldPart) * this.Height),
+				layers.Add (new LogoDrawerLayer (0, (uint)((1 - LogoDrawerSupport.TextFieldPart) * this.Height *
+					(centerizeText ? 0.5 : 1.0)),
 					(uint)this.Width, (uint)(LogoDrawerSupport.TextFieldPart * this.Height)));		// Слой текста
 
 				steps = 0;
@@ -425,7 +428,8 @@ namespace ESHQSetupStub
 
 				if (currentPhase == Phases.LogoFading)
 					{
-					layers.Add (new LogoDrawerLayer (0, (uint)((1 - LogoDrawerSupport.TextFieldPart) * this.Height),
+					layers.Add (new LogoDrawerLayer (0, (uint)((1 - LogoDrawerSupport.TextFieldPart) * this.Height *
+						(centerizeText ? 0.5 : 1.0)),
 						(uint)this.Width, (uint)(LogoDrawerSupport.TextFieldPart * this.Height)));			// Слой градиента
 					}
 				if (currentPhase == Phases.EndingFading2)
@@ -580,7 +584,7 @@ namespace ESHQSetupStub
 			}
 
 		// Создание и подготовка слоёв и лого
-		private void PrecacheLayers ()
+		private void PrepareLayers ()
 			{
 			// Формирование лого
 			// Часть 1
@@ -960,7 +964,7 @@ namespace ESHQSetupStub
 				plotBackBrushes.Add (new SolidBrush (Color.FromArgb (20, byte.Parse (plotColor1[0]),
 					byte.Parse (plotColor1[1]), byte.Parse (plotColor1[2]))));
 				err--;
-				plotGradient1Brush = new SolidBrush (Color.FromArgb (10, byte.Parse (plotColor2[0]),
+				plotGradient1Brush = new SolidBrush (Color.FromArgb (20, byte.Parse (plotColor2[0]),
 					byte.Parse (plotColor2[1]), byte.Parse (plotColor2[2])));
 				err--;	// -104
 				textBrush = new SolidBrush (Color.FromArgb (255, byte.Parse (textColor[0]),
@@ -980,6 +984,9 @@ namespace ESHQSetupStub
 				if (signatureFontSize > 100)
 					signatureFontSize = 100;
 				err--;
+
+				centerizeText = (uint.Parse (fontSizes[2]) != 0);
+				err--;	// -108
 				}
 			catch
 				{
@@ -997,41 +1004,41 @@ namespace ESHQSetupStub
 			try
 				{
 				objectsMetrics.ObjectsType = (LogoDrawerObjectTypes)byte.Parse (metrics1[0]);
-				err--;	// -108
+				err--;
 				objectsMetrics.ObjectsCount = byte.Parse (metrics1[1]);
-				err--;
-				objectsMetrics.PolygonsSidesCount = byte.Parse (metrics1[2]);
 				err--;	// -110
+				objectsMetrics.PolygonsSidesCount = byte.Parse (metrics1[2]);
+				err--;
 				objectsMetrics.StartupPosition = (LogoDrawerObjectStartupPositions)uint.Parse (metrics1[3]);
-				err--;
-				objectsMetrics.KeepTracks = (uint.Parse (metrics1[4]) != 0);
 				err--;	// -112
+				objectsMetrics.KeepTracks = (uint.Parse (metrics1[4]) != 0);
+				err--;
 				objectsMetrics.Acceleration = (uint.Parse (metrics1[5]) != 0);
-				err--;
-				objectsMetrics.Enlarging = int.Parse (metrics1[6]);
 				err--;	// -114
+				objectsMetrics.Enlarging = int.Parse (metrics1[6]);
+				err--;
 				objectsMetrics.MinSpeed = uint.Parse (metrics2[0]);
-				err--;
-				objectsMetrics.MaxSpeed = uint.Parse (metrics2[1]);
 				err--;	// -116
+				objectsMetrics.MaxSpeed = uint.Parse (metrics2[1]);
+				err--;
 				objectsMetrics.MaxSpeedFluctuation = uint.Parse (metrics2[2]);
-				err--;
-				objectsMetrics.MinSize = uint.Parse (metrics3[0]);
 				err--;	// -118
+				objectsMetrics.MinSize = uint.Parse (metrics3[0]);
+				err--;
 				objectsMetrics.MaxSize = uint.Parse (metrics3[1]);
-				err--;
-				objectsMetrics.MinRed = byte.Parse (metrics4[0]);
 				err--;	// -120
+				objectsMetrics.MinRed = byte.Parse (metrics4[0]);
+				err--;
 				objectsMetrics.MaxRed = byte.Parse (metrics4[1]);
-				err--;
-				objectsMetrics.MinGreen = byte.Parse (metrics5[0]);
 				err--;	// -122
+				objectsMetrics.MinGreen = byte.Parse (metrics5[0]);
+				err--;
 				objectsMetrics.MaxGreen = byte.Parse (metrics5[1]);
-				err--;
-				objectsMetrics.MinBlue = byte.Parse (metrics6[0]);
 				err--;	// -124
-				objectsMetrics.MaxBlue = byte.Parse (metrics6[1]);
+				objectsMetrics.MinBlue = byte.Parse (metrics6[0]);
 				err--;
+				objectsMetrics.MaxBlue = byte.Parse (metrics6[1]);
+				err--;	// -126
 				}
 			catch
 				{

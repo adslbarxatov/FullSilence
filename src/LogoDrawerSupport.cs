@@ -259,7 +259,10 @@ namespace ESHQSetupStub
 					if (LogoDrawerSupport.IsCenter (metrics.StartupPosition))
 						{
 						x = (int)ScreenWidth / 2;
-						y = (int)(ScreenHeight * (1.0 - LogoDrawerSupport.TextFieldPart));
+						if (LogoDrawerSupport.IsFlat (metrics.StartupPosition))
+							y = (int)(ScreenHeight * (1.0 - LogoDrawerSupport.TextFieldPart));
+						else
+							y = (int)(ScreenHeight / 2);
 						}
 					else
 						{
@@ -267,8 +270,10 @@ namespace ESHQSetupStub
 						y = rnd.Next ((int)ScreenHeight + ρ) - ρ / 2;
 						}
 
-					endX = (speedX > 0) ? ((int)ScreenWidth + ρ) : -ρ;
-					endY = (speedY > 0) ? ((int)ScreenHeight + ρ) : -ρ;
+					endX = (speedX > 0) ? ((int)ScreenWidth + ρ + speedX + maxFluctuation) :
+						(-ρ + speedX - maxFluctuation);		// Фикс против преждевременного
+					endY = (speedY > 0) ? ((int)ScreenHeight + ρ + speedY + maxFluctuation) :
+						(-ρ + speedY - maxFluctuation);		// 'перепрыгивания' порога
 
 					break;
 				}
@@ -308,10 +313,8 @@ namespace ESHQSetupStub
 					speedY--;
 				}
 
-			if (Enlarging > 0)
-				ρ += 2;
-			else if ((Enlarging < 0) && (ρ > 1))
-				ρ -= 2;
+			if ((Enlarging > 0) || (Enlarging < 0) && (ρ > -Enlarging + 2))
+				ρ += Enlarging;
 
 			// Отрисовка
 			if (image != null)
@@ -822,7 +825,10 @@ namespace ESHQSetupStub
 					if (LogoDrawerSupport.IsCenter (metrics.StartupPosition))
 						{
 						x = (int)ScreenWidth / 2;
-						y = (int)(ScreenHeight * (1.0 - LogoDrawerSupport.TextFieldPart));
+						if (LogoDrawerSupport.IsFlat (metrics.StartupPosition))
+							y = (int)(ScreenHeight * (1.0 - LogoDrawerSupport.TextFieldPart));
+						else
+							y = (int)(ScreenHeight / 2);
 						}
 					else
 						{
@@ -830,8 +836,10 @@ namespace ESHQSetupStub
 						y = rnd.Next ((int)ScreenHeight + 2 * ρ) - ρ;
 						}
 
-					endX = (speedX > 0) ? ((int)ScreenWidth + 8 * ρ) : (-8 * ρ);
-					endY = (speedY > 0) ? ((int)ScreenHeight + 8 * ρ) : (-8 * ρ);
+					endX = (speedX > 0) ? ((int)ScreenWidth + 8 * ρ + speedX + maxFluctuation) :
+						(-8 * ρ + speedX - maxFluctuation);
+					endY = (speedY > 0) ? ((int)ScreenHeight + 8 * ρ + speedY + maxFluctuation) :
+						(-8 * ρ + speedY - maxFluctuation);
 					break;
 				}
 
@@ -879,10 +887,8 @@ namespace ESHQSetupStub
 					φ -= 360;
 				}
 
-			if (Enlarging > 0)
-				ρ++;
-			else if ((Enlarging < 0) && (ρ > 0))
-				ρ--;
+			if ((Enlarging > 0) || (Enlarging < 0) && (ρ > -Enlarging))
+				ρ += Enlarging;
 
 			// Сброс предыдущего изображения
 			if (image != null)
@@ -994,10 +1000,10 @@ namespace ESHQSetupStub
 			metrics.Acceleration = OldMetrics.Acceleration;
 
 			metrics.Enlarging = OldMetrics.Enlarging;
-			if (metrics.Enlarging < 0)
+			/*if (metrics.Enlarging < 0)
 				metrics.Enlarging = -1;
 			if (metrics.Enlarging > 0)
-				metrics.Enlarging = 1;
+				metrics.Enlarging = 1;*/
 
 			return metrics;
 			}
@@ -1258,7 +1264,10 @@ namespace ESHQSetupStub
 					if (LogoDrawerSupport.IsCenter (metrics.StartupPosition))
 						{
 						x = (int)ScreenWidth / 2;
-						y = (int)(ScreenHeight * (1.0 - LogoDrawerSupport.TextFieldPart));
+						if (LogoDrawerSupport.IsFlat (metrics.StartupPosition))
+							y = (int)(ScreenHeight * (1.0 - LogoDrawerSupport.TextFieldPart));
+						else
+							y = (int)(ScreenHeight / 2);
 						}
 					else
 						{
@@ -1266,8 +1275,10 @@ namespace ESHQSetupStub
 						y = rnd.Next ((int)ScreenHeight + sourceImage.Height) - sourceImage.Height / 2;
 						}
 
-					endX = (speedX > 0) ? ((int)ScreenWidth + sourceImage.Width) : -sourceImage.Width;
-					endY = (speedY > 0) ? ((int)ScreenHeight + sourceImage.Height) : -sourceImage.Height;
+					endX = (speedX > 0) ? ((int)ScreenWidth + sourceImage.Width + speedX + maxFluctuation) :
+						(-sourceImage.Width + speedX - maxFluctuation);
+					endY = (speedY > 0) ? ((int)ScreenHeight + sourceImage.Height + speedY + maxFluctuation) :
+						(-sourceImage.Height + -speedY - maxFluctuation);
 
 					break;
 				}
@@ -1582,7 +1593,10 @@ namespace ESHQSetupStub
 					if (LogoDrawerSupport.IsCenter (metrics.StartupPosition))
 						{
 						x = (int)ScreenWidth / 2;
-						y = (int)(ScreenHeight * (1.0 - LogoDrawerSupport.TextFieldPart));
+						if (LogoDrawerSupport.IsFlat (metrics.StartupPosition))
+							y = (int)(ScreenHeight * (1.0 - LogoDrawerSupport.TextFieldPart));
+						else
+							y = (int)(ScreenHeight / 2);
 						}
 					else
 						{
@@ -1590,8 +1604,10 @@ namespace ESHQSetupStub
 						y = rnd.Next ((int)ScreenHeight + sourceImage.Height) - sourceImage.Height / 2;
 						}
 
-					endX = (speedX > 0) ? ((int)ScreenWidth + sourceImage.Width) : -sourceImage.Width;
-					endY = (speedY > 0) ? ((int)ScreenHeight + sourceImage.Height) : -sourceImage.Height;
+					endX = (speedX > 0) ? ((int)ScreenWidth + sourceImage.Width + speedX + maxFluctuation) :
+						(-sourceImage.Width + speedX - maxFluctuation);
+					endY = (speedY > 0) ? ((int)ScreenHeight + sourceImage.Height + speedY + maxFluctuation) :
+						(-sourceImage.Height + speedY - maxFluctuation);
 
 					break;
 				}
@@ -1646,7 +1662,12 @@ namespace ESHQSetupStub
 
 			g.TranslateTransform (sourceImage.Width / 2, sourceImage.Height / 2);			// Центровка поворота
 			g.RotateTransform (φ);
+			/*if ((Enlarging > 0) || (Enlarging < 0) && (sourceImage.Width > -Enlarging) && (sourceImage.Height > -Enlarging))
+				g.DrawImage (sourceImage, -sourceImage.Width / 2, -sourceImage.Height / 2, sourceImage.Width + Enlarging ,
+					sourceImage.Height + (int)((double)sourceImage.Height * (double)Enlarging / (double)sourceImage.Width));
+			else*/
 			g.DrawImage (sourceImage, -sourceImage.Width / 2, -sourceImage.Height / 2);
+
 			g.Dispose ();
 
 			// Контроль

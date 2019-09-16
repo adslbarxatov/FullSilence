@@ -72,6 +72,18 @@ namespace ESHQSetupStub
 		private uint stringLength = 0;
 
 		/// <summary>
+		/// Тип строки (дополнительное поле)
+		/// </summary>
+		public uint StringType
+			{
+			get
+				{
+				return stringType;
+				}
+			}
+		private uint stringType = 0;
+
+		/// <summary>
 		/// Конструктор. Инициализиует объект-строку (предполагает моноширинный шрифт)
 		/// </summary>
 		/// <param name="Text">Текст строки</param>
@@ -79,6 +91,24 @@ namespace ESHQSetupStub
 		/// <param name="TimeoutPause">Пауза до перехода к следующей строке</param>
 		/// <param name="LetterWidth">Ширина отдельной буквы строки</param>
 		public LogoDrawerString (string Text, Font TextFont, uint TimeoutPause, uint LetterWidth)
+			{
+			LogoDrawerStringInit (Text, TextFont, TimeoutPause, LetterWidth, 0);
+			}
+
+		/// <summary>
+		/// Конструктор. Инициализиует объект-строку (предполагает моноширинный шрифт)
+		/// </summary>
+		/// <param name="Text">Текст строки</param>
+		/// <param name="TextFont">Шрифт строки</param>
+		/// <param name="TimeoutPause">Пауза до перехода к следующей строке</param>
+		/// <param name="LetterWidth">Ширина отдельной буквы строки</param>
+		/// <param name="Type">Тип строки (для поддержки дополнительных функций)</param>
+		public LogoDrawerString (string Text, Font TextFont, uint TimeoutPause, uint LetterWidth, uint Type)
+			{
+			LogoDrawerStringInit (Text, TextFont, TimeoutPause, LetterWidth, Type);
+			}
+
+		private void LogoDrawerStringInit (string Text, Font TextFont, uint TimeoutPause, uint LetterWidth, uint Type)
 			{
 			stringText = Text;
 			if ((stringText == null) || (stringText == ""))
@@ -88,6 +118,7 @@ namespace ESHQSetupStub
 			stringFont = TextFont;
 			letterSize = LetterWidth;
 			pause = TimeoutPause;
+			stringType = Type;
 			}
 		}
 

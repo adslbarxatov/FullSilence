@@ -35,12 +35,14 @@ namespace ESHQSetupStub
 		private uint currentFrame = 0;							// Текущее субокно
 
 		private Graphics gr;									// Объекты-отрисовщики
-		private SolidBrush backBrush, fadeBrush,
+		/*private SolidBrush backBrush, fadeBrush,
 			commentTextBrush, codeTextBrush, consoleTextBrush,
 			commentBackBrush, codeBackBrush, consoleBackBrush,
 			commentBorderBrush, codeBorderBrush, consoleBorderBrush,
 			warningTextBrush, warningBackBrush;
-		private Font commentFont, codeFont, consoleFont;
+		private Font commentFont, codeFont, consoleFont;*/
+		private List<List<SolidBrush>> brushes = new List<List<SolidBrush>> ();
+		private List<Font> fonts = new List<Font> ();
 
 		// Видео
 		private VideoManager vm = new VideoManager ();			// Видеофайл (балластная инициализация)
@@ -119,31 +121,39 @@ namespace ESHQSetupStub
 			SFVideo.Filter = "Audio-Video Interchange video format (*.avi)|(*.avi)";
 
 			// Формирование шрифтов и кистей
-			backBrush = new SolidBrush (Color.FromArgb (255, 255, 255));
-			fadeBrush = new SolidBrush (Color.FromArgb (50, 255, 255, 255));
+			brushes.Add (new List<SolidBrush> ());		// Общие кисти
+			brushes[0].Add (new SolidBrush (Color.FromArgb (0, 0, 0)));
+			brushes[0].Add (new SolidBrush (Color.FromArgb (10, brushes[0][0].Color)));
 
-			commentTextBrush = new SolidBrush (Color.FromArgb (96, 96, 96));
-			codeTextBrush = new SolidBrush (Color.FromArgb (0, 128, 255));
-			consoleTextBrush = new SolidBrush (Color.FromArgb (192, 192, 192));
+			brushes.Add (new List<SolidBrush> ());		// Кисти комментариев
+			brushes[1].Add (new SolidBrush (Color.FromArgb (96, 96, 96)));		// Текст
+			brushes[1].Add (new SolidBrush (Color.FromArgb (255, 255, 255)));	// Фон
+			brushes[1].Add (new SolidBrush (Color.FromArgb (128, 128, 128)));	// Рамка
 
-			commentBackBrush = new SolidBrush (Color.FromArgb (255, 255, 255));
-			codeBackBrush = new SolidBrush (Color.FromArgb (255, 255, 255));
-			consoleBackBrush = new SolidBrush (Color.FromArgb (0, 0, 0));
+			brushes.Add (new List<SolidBrush> ());		// Кисти кода
+			brushes[2].Add (new SolidBrush (Color.FromArgb (0, 128, 255)));
+			brushes[2].Add (new SolidBrush (Color.FromArgb (255, 255, 255)));
+			brushes[2].Add (new SolidBrush (Color.FromArgb (0, 128, 255)));
 
-			commentBorderBrush = new SolidBrush (Color.FromArgb (128, 128, 128));
-			codeBorderBrush = new SolidBrush (Color.FromArgb (0, 128, 255));
-			consoleBorderBrush = new SolidBrush (Color.FromArgb (0, 128, 0));
+			brushes.Add (new List<SolidBrush> ());		// Кисти консоли
+			brushes[3].Add (new SolidBrush (Color.FromArgb (192, 192, 192)));
+			brushes[3].Add (new SolidBrush (Color.FromArgb (0, 0, 0)));
+			brushes[3].Add (new SolidBrush (Color.FromArgb (0, 128, 0)));
 
-			warningTextBrush = new SolidBrush (Color.FromArgb (255, 255, 255));
-			warningBackBrush = new SolidBrush (Color.FromArgb (255, 128, 0));
+			brushes.Add (new List<SolidBrush> ());		// Кисти предупреждений
+			brushes[4].Add (new SolidBrush (Color.FromArgb (255, 255, 255)));
+			brushes[4].Add (new SolidBrush (Color.FromArgb (255, 128, 0)));
+			brushes[4].Add (new SolidBrush (Color.FromArgb (255, 128, 0)));
 
-			commentFont = new Font ("Calibri", 24, FontStyle.Regular);
-			codeFont = new Font ("Consolas", 22, FontStyle.Regular);
-			consoleFont = new Font ("Consolas", 22, FontStyle.Regular);
+			// Шрифты
+			fonts.Add (new Font ("Calibri", 24, FontStyle.Regular));
+			fonts.Add (new Font ("Consolas", 22, FontStyle.Regular));
+			fonts.Add (new Font ("Consolas", 22, FontStyle.Regular));
 
 			// Загрузка параметров
 			int err = -2;
-			if ((OFConfig.ShowDialog () != DialogResult.OK) || !LoadText ())
+			int debug = 0;
+			if ((OFConfig.ShowDialog () != DialogResult.OK) || ((debug = LoadText ()) < 0))
 				{
 				MessageBox.Show ("Failed to load configuration: error " + err.ToString (), ProgramDescription.AssemblyTitle,
 					 MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
@@ -155,7 +165,8 @@ namespace ESHQSetupStub
 			// Подготовка к записи в видеопоток
 			layers.Add (new LogoDrawerLayer (0, 0, (uint)this.Width, (uint)this.Height));	// Главный слой
 
-			if ((MessageBox.Show ("Write frames to AVI?", ProgramDescription.AssemblyTitle, MessageBoxButtons.YesNo,
+			// Инициализация видеопотока (запрещена в режиме отладки конфигурации)
+			if ((debug == 0) && (MessageBox.Show ("Write frames to AVI?", ProgramDescription.AssemblyTitle, MessageBoxButtons.YesNo,
 				MessageBoxIcon.Question, MessageBoxDefaultButton.Button2) == DialogResult.Yes) &&
 				(SFVideo.ShowDialog () == DialogResult.OK))
 				{
@@ -262,7 +273,7 @@ namespace ESHQSetupStub
 		private void FadeScreen ()
 			{
 			// Перекрытие фона
-			layers[1].Descriptor.FillRectangle (fadeBrush, 0, 0, this.Width, this.Height);
+			layers[1].Descriptor.FillRectangle (brushes[0][1], 0, 0, this.Width, this.Height);
 
 			// Триггер
 			if (steps++ >= 50)
@@ -278,7 +289,7 @@ namespace ESHQSetupStub
 			if (LayerNumber >= layers.Count)
 				return;
 
-			switch (LayerNumber)
+			/*switch (LayerNumber)
 				{
 				// Сброс
 				default:
@@ -301,6 +312,22 @@ namespace ESHQSetupStub
 					layers[1].Descriptor.FillRectangle (warningBackBrush, borderSize, borderSize,
 						layers[1].Layer.Width - borderSize * 2, layers[1].Layer.Height - borderSize * 2);
 					break;
+				}*/
+
+			if ((LayerNumber > 0) && (LayerNumber <= 3))
+				{
+				layers[(int)LayerNumber].Descriptor.FillRectangle (brushes[(int)LayerNumber][1], borderSize, borderSize,
+					layers[(int)LayerNumber].Layer.Width - borderSize * 2, layers[(int)LayerNumber].Layer.Height - borderSize * 2);
+				}
+			else if (LayerNumber == 4)
+				{
+				layers[1].Descriptor.FillRectangle (brushes[(int)LayerNumber][1], borderSize, borderSize,
+					layers[1].Layer.Width - borderSize * 2, layers[1].Layer.Height - borderSize * 2);
+				}
+			else
+				{
+				layers[1].Descriptor.FillRectangle (brushes[1][1], borderSize, borderSize,
+					layers[1].Layer.Width - borderSize * 2, layers[1].Layer.Height - borderSize * 2);
 				}
 
 			// Переход
@@ -325,6 +352,19 @@ namespace ESHQSetupStub
 
 			if (steps >= 173)
 				{
+				// Версия
+
+				// Расчёт размера надписи
+				string ver = ProgramDescription.AssemblyVersion.Replace ("0", "");
+				while (ver.Substring (ver.Length - 1, 1) == ".")
+					ver = ver.Substring (0, ver.Length - 1);
+				SizeF sz = gr.MeasureString ("v " + ver, fonts[0]);
+
+				// Надпись
+				layers[1].Descriptor.DrawString ("v " + ver, fonts[0], brushes[1][0],
+					layers[1].Layer.Width - sz.Width - sz.Height, layers[1].Layer.Height - 2 * sz.Height);
+
+				// Переход далее
 				steps = 0;
 				currentPhase++;
 				}
@@ -338,9 +378,9 @@ namespace ESHQSetupStub
 			layers.Add (new LogoDrawerLayer (0, 0, (uint)this.Width, (uint)this.Height));	// Слой лого
 
 			// Начало записи
-			this.BackColor = backBrush.Color;	// Заливка фона
-			layers[0].Descriptor.FillRectangle (backBrush, 0, 0, this.Width, this.Height);
-			layers[1].Descriptor.FillRectangle (backBrush, 0, 0, this.Width, this.Height);
+			this.BackColor = brushes[0][0].Color;	// Заливка фона
+			layers[0].Descriptor.FillRectangle (brushes[0][0], 0, 0, this.Width, this.Height);
+			layers[1].Descriptor.FillRectangle (brushes[0][0], 0, 0, this.Width, this.Height);
 
 			// Первичная отрисовка
 			DrawLayers ();
@@ -363,8 +403,8 @@ namespace ESHQSetupStub
 				for (uint i = borderSize; i > 0; i--)
 					{
 					double coeff = 0.5 * (double)i / (double)borderSize + 0.5;
-					SolidBrush br = new SolidBrush (Color.FromArgb ((int)((double)commentBorderBrush.Color.R * coeff),
-						(int)((double)commentBorderBrush.Color.G * coeff), (int)((double)commentBorderBrush.Color.B * coeff)));
+					SolidBrush br = new SolidBrush (Color.FromArgb ((int)((double)brushes[1][2].Color.R * coeff),
+						(int)((double)brushes[1][2].Color.G * coeff), (int)((double)brushes[1][2].Color.B * coeff)));
 					layers[1].Descriptor.FillRectangle (br, borderSize - i, borderSize - i,
 						layers[1].Layer.Width - 2 * (borderSize - i), layers[1].Layer.Height - 2 * (borderSize - i));
 					br.Dispose ();
@@ -381,8 +421,8 @@ namespace ESHQSetupStub
 				for (uint i = borderSize; i > 0; i--)
 					{
 					double coeff = 0.5 * (double)i / (double)borderSize + 0.5;
-					SolidBrush br = new SolidBrush (Color.FromArgb ((int)((double)codeBorderBrush.Color.R * coeff),
-						(int)((double)codeBorderBrush.Color.G * coeff), (int)((double)codeBorderBrush.Color.B * coeff)));
+					SolidBrush br = new SolidBrush (Color.FromArgb ((int)((double)brushes[2][2].Color.R * coeff),
+						(int)((double)brushes[2][2].Color.G * coeff), (int)((double)brushes[2][2].Color.B * coeff)));
 					layers[2].Descriptor.FillRectangle (br, borderSize - i, borderSize - i,
 						layers[2].Layer.Width - 2 * (borderSize - i), layers[2].Layer.Height - 2 * (borderSize - i));
 					br.Dispose ();
@@ -399,8 +439,8 @@ namespace ESHQSetupStub
 				for (uint i = borderSize; i > 0; i--)
 					{
 					double coeff = 0.5 * (double)i / (double)borderSize + 0.5;
-					SolidBrush br = new SolidBrush (Color.FromArgb ((int)((double)consoleBorderBrush.Color.R * coeff),
-						(int)((double)consoleBorderBrush.Color.G * coeff), (int)((double)consoleBorderBrush.Color.B * coeff)));
+					SolidBrush br = new SolidBrush (Color.FromArgb ((int)((double)brushes[3][2].Color.R * coeff),
+						(int)((double)brushes[3][2].Color.G * coeff), (int)((double)brushes[3][2].Color.B * coeff)));
 					layers[3].Descriptor.FillRectangle (br, borderSize - i, borderSize - i,
 						layers[3].Layer.Width - 2 * (borderSize - i), layers[3].Layer.Height - 2 * (borderSize - i));
 					br.Dispose ();
@@ -413,11 +453,11 @@ namespace ESHQSetupStub
 			if (steps == 85)
 				{
 				layers.Add (new LogoDrawerLayer (0, (uint)(this.Height * 0.3), (uint)this.Width, (uint)(this.Height * 0.1) + 1));	// Слой панелей
-				layers[4].Descriptor.FillRectangle (codeBorderBrush, 0, 0, layers[4].Layer.Width / 2, layers[4].Layer.Height);
-				layers[4].Descriptor.DrawString ("Source code", codeFont, codeBackBrush, lineLeft, lineTop);
-				layers[4].Descriptor.FillRectangle (consoleBorderBrush, layers[4].Layer.Width / 2, 0,
+				layers[4].Descriptor.FillRectangle (brushes[2][2], 0, 0, layers[4].Layer.Width / 2, layers[4].Layer.Height);
+				layers[4].Descriptor.DrawString ("Source code", fonts[1], brushes[2][1], lineLeft, lineTop);
+				layers[4].Descriptor.FillRectangle (brushes[3][2], layers[4].Layer.Width / 2, 0,
 					layers[4].Layer.Width / 2, layers[4].Layer.Height);
-				layers[4].Descriptor.DrawString ("Output", consoleFont, consoleBackBrush, layers[4].Layer.Width / 2 + lineLeft, lineTop);
+				layers[4].Descriptor.DrawString ("Output", fonts[2], brushes[2][1], layers[4].Layer.Width / 2 + lineLeft, lineTop);
 				}
 
 			// Смена фазы
@@ -445,13 +485,13 @@ namespace ESHQSetupStub
 				b.Dispose ();
 				savingLayersCounter++;
 
-				gr.FillRectangle (backBrush, 0, 0, this.Width, this.Height);
+				gr.FillRectangle (brushes[0][0], 0, 0, this.Width, this.Height);
 				string s = "- Rendering -\nPhase: " + currentPhase.ToString () + "\nFrames: " + savingLayersCounter.ToString () +
 					"\nPackages left: " + mainStringsSet.Count.ToString ();
 				if (mainStringsSet.Count > 0)
 					s += ("\nLines in current package left: " + mainStringsSet[0].Count.ToString ());
 
-				gr.DrawString (s, codeFont, codeTextBrush, 0, 0);
+				gr.DrawString (s, fonts[1], brushes[2][0], 0, 0);
 				}
 			else
 				{
@@ -470,40 +510,24 @@ namespace ESHQSetupStub
 			ExtendedTimer.Enabled = false;
 
 			// Сброс ресурсов
-			if (backBrush != null)
-				backBrush.Dispose ();
-			if (commentTextBrush != null)
-				commentTextBrush.Dispose ();
-			if (commentBackBrush != null)
-				commentBackBrush.Dispose ();
-			if (commentBorderBrush != null)
-				commentBorderBrush.Dispose ();
-			if (codeTextBrush != null)
-				codeTextBrush.Dispose ();
-			if (codeBackBrush != null)
-				codeBackBrush.Dispose ();
-			if (codeBorderBrush != null)
-				codeBorderBrush.Dispose ();
-			if (consoleTextBrush != null)
-				consoleTextBrush.Dispose ();
-			if (consoleBackBrush != null)
-				consoleBackBrush.Dispose ();
-			if (consoleBorderBrush != null)
-				consoleBorderBrush.Dispose ();
-			if (warningBackBrush != null)
-				warningBackBrush.Dispose ();
-			if (warningTextBrush != null)
-				warningTextBrush.Dispose ();
+			for (int i = 0; i < brushes.Count; i++)
+				{
+				for (int j = 0; j < brushes[i].Count; j++)
+					{
+					brushes[i][j].Dispose ();
+					}
+				brushes[i].Clear ();
+				}
+			brushes.Clear ();
+
+			for (int i = 0; i < fonts.Count; i++)
+				{
+				fonts[i].Dispose ();
+				}
+			fonts.Clear ();
 
 			if (gr != null)
 				gr.Dispose ();
-
-			if (commentFont != null)
-				commentFont.Dispose ();
-			if (codeFont != null)
-				codeFont.Dispose ();
-			if (consoleFont != null)
-				consoleFont.Dispose ();
 
 			for (int i = 0; i < layers.Count; i++)
 				layers[i].Dispose ();
@@ -538,7 +562,7 @@ namespace ESHQSetupStub
 				{
 				// Одна буква
 				string letter = StringsSet[0][0].StringText.Substring ((int)steps++, 1);
-				switch (StringsSet[0][0].StringType)
+				/*switch (StringsSet[0][0].StringType)
 					{
 					case 1:
 						Field.DrawString (letter, StringsSet[0][0].StringFont, commentTextBrush, drawPoint);
@@ -555,6 +579,14 @@ namespace ESHQSetupStub
 					case 4:
 						Field.DrawString (letter, StringsSet[0][0].StringFont, warningTextBrush, drawPoint);
 						break;
+					}*/
+				if ((StringsSet[0][0].StringType > 0) && (StringsSet[0][0].StringType <= 4))
+					{
+					Field.DrawString (letter, StringsSet[0][0].StringFont, brushes[(int)StringsSet[0][0].StringType][0], drawPoint);
+					}
+				else
+					{
+					Field.DrawString (letter, StringsSet[0][0].StringFont, brushes[1][0], drawPoint);
 					}
 
 				// Смещение "каретки"
@@ -597,7 +629,7 @@ namespace ESHQSetupStub
 			}
 
 		// Метод загружает текст для отображения
-		private bool LoadText ()
+		private int LoadText ()
 			{
 			// Открытие файла
 			FileStream FS = null;
@@ -607,12 +639,13 @@ namespace ESHQSetupStub
 				}
 			catch
 				{
-				return false;
+				return -1;
 				}
 			StreamReader SR = new StreamReader (FS, Encoding.GetEncoding (1251));
 
 			// Загрузка текста
 			string s;
+			int debug = 0;
 
 			// Чтение текста
 			uint type = 0, oldType = 0, pause = 0;
@@ -625,12 +658,21 @@ namespace ESHQSetupStub
 					{
 					continue;
 					}
+				else if (s[0] == '!')	// Отладочная функция для файлов конфигурации
+					{
+					do
+						{
+						s = SR.ReadLine () + " ";
+						} while (!SR.EndOfStream && (s[0] != '!'));
+					debug = 1;
+					}
 				else
 					{
 					if (!uint.TryParse (s.Substring (0, 1), out type) || (type > 4))	// Тип 0 используется для сброса текущего типа
 						type = 1;
-					if (!uint.TryParse (s.Substring (2, 5), out pause) || (pause > 60000))
+					if (!uint.TryParse (s.Substring (2, 5), out pause) || (pause > 60000))	// Пауза в миллисекундах
 						pause = 0;	// Без ограничений
+					pause = (pause * 100) / (generalStep * 1000);	// Пауза во фреймах
 
 					if (type != oldType)
 						{
@@ -638,7 +680,7 @@ namespace ESHQSetupStub
 						mainStringsSet.Add (new List<LogoDrawerString> ());
 						}
 
-					switch (type)
+					/*switch (type)
 						{
 						default:
 						case 1:
@@ -653,6 +695,21 @@ namespace ESHQSetupStub
 						case 3:
 							mainStringsSet[mainStringsSet.Count - 1].Add (new LogoDrawerString (s.Substring (8), consoleFont, pause, 6, type));
 							break;
+						}*/
+					if ((type > 0) && (type <= 3))
+						{
+						mainStringsSet[mainStringsSet.Count - 1].Add (new LogoDrawerString (s.Substring (8),
+							fonts[(int)type - 1], pause, 6, type));
+						}
+					else if (type == 4)
+						{
+						mainStringsSet[mainStringsSet.Count - 1].Add (new LogoDrawerString (s.Substring (8),
+							fonts[0], pause, 6, type));
+						}
+					else
+						{
+						mainStringsSet[mainStringsSet.Count - 1].Add (new LogoDrawerString (s.Substring (8),
+							fonts[0], pause, 6, 1));
 						}
 					}
 				}
@@ -663,7 +720,7 @@ namespace ESHQSetupStub
 
 			SR.Close ();
 			FS.Close ();
-			return true;
+			return debug;
 			}
 		}
 	}

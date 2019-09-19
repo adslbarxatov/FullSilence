@@ -10,7 +10,7 @@ using System.Windows.Forms;
 namespace ESHQSetupStub
 	{
 	/// <summary>
-	/// Класс обеспечивает отображение логотипа мода
+	/// Класс обеспечивает отображение визуализации текста
 	/// </summary>
 	public partial class FSDrawer:Form
 		{

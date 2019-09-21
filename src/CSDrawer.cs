@@ -19,28 +19,26 @@ namespace ESHQSetupStub
 		private uint steps = 0;									// Счётчик шагов отрисовки
 		private const uint generalStep = 3;						// Длительность главного шага отображения
 		private string commandLine;								// Параметры командной строки
+		private bool debugMode = false;							// Режим отладки скрипта
 
 		// Текст
 		private List<List<LogoDrawerString>> mainStringsSet = new List<List<LogoDrawerString>> ();	// Тексты для отображения
 		private Point drawPoint;								// Текущая позиция отрисовки текста
-		private int lineFeed,									// Высота строки текста расширенного режима
-			lineLeft,											// Начало и конец строки текста расширенного режима
-			lineRight,
-			lineTop;											// Начало блока текста расширенного режима
+		private const int lineFeed = 38,						// Высота строки текста расширенного режима
+			lineLeft = 20,										// Начало и конец строки текста расширенного режима
+			lineRight = 20,
+			lineTop = 20;										// Начало блока текста расширенного режима
 
 		// Графика
 		private List<LogoDrawerLayer> layers = new List<LogoDrawerLayer> ();		// Базовые слои изображения
-		private uint savingLayersCounter = 0;					// Счётчик сохранений
-		private uint borderSize = 5;							// Ширина границы субокна
-		private uint currentFrame = 0;							// Текущее субокно
+		private uint savingLayersCounter = 0,					// Счётчик сохранений
+			borderSize = 5,										// Ширина границы субокна
+			currentFrame = 0;									// Текущее субокно
+		private bool showOutput = true;							// Флаг наличия поля вывода программы
+		private double commentFramePart = 0.3;					// Процент поля, занимаемый окном комментариев
+		private const double titlesFramePart = 0.07;			// Высота поля заголовков субокон
 
 		private Graphics gr;									// Объекты-отрисовщики
-		/*private SolidBrush backBrush, fadeBrush,
-			commentTextBrush, codeTextBrush, consoleTextBrush,
-			commentBackBrush, codeBackBrush, consoleBackBrush,
-			commentBorderBrush, codeBorderBrush, consoleBorderBrush,
-			warningTextBrush, warningBackBrush;
-		private Font commentFont, codeFont, consoleFont;*/
 		private List<List<SolidBrush>> brushes = new List<List<SolidBrush>> ();
 		private List<Font> fonts = new List<Font> ();
 
@@ -151,22 +149,22 @@ namespace ESHQSetupStub
 			fonts.Add (new Font ("Consolas", 22, FontStyle.Regular));
 
 			// Загрузка параметров
-			int err = -2;
-			int debug = 0;
-			if ((OFConfig.ShowDialog () != DialogResult.OK) || ((debug = LoadText ()) < 0))
+			int err = -2, err2;
+			if ((OFConfig.ShowDialog () != DialogResult.OK) || ((err2 = LoadText ()) < 0))
 				{
 				MessageBox.Show ("Failed to load configuration: error " + err.ToString (), ProgramDescription.AssemblyTitle,
 					 MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
 				this.Close ();
 				return;
 				}
+			debugMode = (err2 > 0);
 			SFVideo.FileName = Path.GetFileNameWithoutExtension (OFConfig.FileName) + ".avi";
 
 			// Подготовка к записи в видеопоток
 			layers.Add (new LogoDrawerLayer (0, 0, (uint)this.Width, (uint)this.Height));	// Главный слой
 
 			// Инициализация видеопотока (запрещена в режиме отладки конфигурации)
-			if ((debug == 0) && (MessageBox.Show ("Write frames to AVI?", ProgramDescription.AssemblyTitle, MessageBoxButtons.YesNo,
+			if (!debugMode && (MessageBox.Show ("Write frames to AVI?", ProgramDescription.AssemblyTitle, MessageBoxButtons.YesNo,
 				MessageBoxIcon.Question, MessageBoxDefaultButton.Button2) == DialogResult.Yes) &&
 				(SFVideo.ShowDialog () == DialogResult.OK))
 				{
@@ -180,11 +178,6 @@ namespace ESHQSetupStub
 					return;
 					}
 				}
-
-			// Настройка параметров
-			lineLeft = lineRight = 20;
-			lineFeed = 38;
-			lineTop = 20;
 
 			// Запуск
 			ExtendedTimer.Enabled = true;
@@ -203,12 +196,15 @@ namespace ESHQSetupStub
 
 				// Отрисовка фрагментов лого
 				case Phases.LogoFragment1:
-					DrawingLogoFragments ();
+					if (debugMode)
+						currentPhase++;
+					else
+						DrawingLogoFragments ();
 					break;
 
 				// Пауза
 				case Phases.LogoIntermission:
-					if (steps++ > 150)
+					if (debugMode || (steps++ > 150))
 						{
 						steps = 0;
 						currentPhase++;
@@ -217,7 +213,10 @@ namespace ESHQSetupStub
 
 				// Затенение
 				case Phases.LogoFading1:
-					FadeScreen ();
+					if (debugMode)
+						currentPhase++;
+					else
+						FadeScreen ();
 					break;
 
 				case Phases.LogoFading2:
@@ -288,31 +287,6 @@ namespace ESHQSetupStub
 			{
 			if (LayerNumber >= layers.Count)
 				return;
-
-			/*switch (LayerNumber)
-				{
-				// Сброс
-				default:
-				case 1:
-					layers[1].Descriptor.FillRectangle (commentBackBrush, borderSize, borderSize,
-						layers[1].Layer.Width - borderSize * 2, layers[1].Layer.Height - borderSize * 2);
-					break;
-
-				case 2:
-					layers[2].Descriptor.FillRectangle (codeBackBrush, borderSize, borderSize,
-						layers[2].Layer.Width - borderSize * 2, layers[2].Layer.Height - borderSize * 2);
-					break;
-
-				case 3:
-					layers[3].Descriptor.FillRectangle (consoleBackBrush, borderSize, borderSize,
-						layers[3].Layer.Width - borderSize * 2, layers[3].Layer.Height - borderSize * 2);
-					break;
-
-				case 4:
-					layers[1].Descriptor.FillRectangle (warningBackBrush, borderSize, borderSize,
-						layers[1].Layer.Width - borderSize * 2, layers[1].Layer.Height - borderSize * 2);
-					break;
-				}*/
 
 			if ((LayerNumber > 0) && (LayerNumber <= 3))
 				{
@@ -399,7 +373,7 @@ namespace ESHQSetupStub
 				layers.RemoveAt (1);
 
 				// Подготовка слоёв
-				layers.Add (new LogoDrawerLayer (0, 0, (uint)this.Width, (uint)(this.Height * 0.3) + 1));	// Слой комментария
+				layers.Add (new LogoDrawerLayer (0, 0, (uint)this.Width, (uint)(this.Height * commentFramePart) + 1));	// Слой комментария
 				for (uint i = borderSize; i > 0; i--)
 					{
 					double coeff = 0.5 * (double)i / (double)borderSize + 0.5;
@@ -416,8 +390,9 @@ namespace ESHQSetupStub
 
 			if (steps == 60)
 				{
-				layers.Add (new LogoDrawerLayer (0, (uint)(this.Height * 0.4), (uint)this.Width / 2,
-					(uint)(this.Height * 0.6) + 1));									// Слой кода
+				layers.Add (new LogoDrawerLayer (0, (uint)(this.Height * (commentFramePart + titlesFramePart)),
+					(uint)this.Width / (showOutput ? 2u : 1u),
+					(uint)(this.Height * (1.0 - commentFramePart - titlesFramePart)) + 1));	// Слой кода
 				for (uint i = borderSize; i > 0; i--)
 					{
 					double coeff = 0.5 * (double)i / (double)borderSize + 0.5;
@@ -434,30 +409,40 @@ namespace ESHQSetupStub
 
 			if (steps == 75)
 				{
-				layers.Add (new LogoDrawerLayer ((uint)this.Width / 2, (uint)(this.Height * 0.4),
-					(uint)this.Width / 2, (uint)(this.Height * 0.6) + 1));				// Слой вывода
-				for (uint i = borderSize; i > 0; i--)
-					{
-					double coeff = 0.5 * (double)i / (double)borderSize + 0.5;
-					SolidBrush br = new SolidBrush (Color.FromArgb ((int)((double)brushes[3][2].Color.R * coeff),
-						(int)((double)brushes[3][2].Color.G * coeff), (int)((double)brushes[3][2].Color.B * coeff)));
-					layers[3].Descriptor.FillRectangle (br, borderSize - i, borderSize - i,
-						layers[3].Layer.Width - 2 * (borderSize - i), layers[3].Layer.Height - 2 * (borderSize - i));
-					br.Dispose ();
-					}
+				layers.Add (new LogoDrawerLayer ((uint)this.Width / 2, (uint)(this.Height * (commentFramePart + titlesFramePart)),
+					(uint)this.Width / 2, (uint)(this.Height * (1.0 - commentFramePart - titlesFramePart)) + 1));	// Слой вывода
 
-				FlushText (3);
-				currentPhase++;
+				if (showOutput)
+					{
+					for (uint i = borderSize; i > 0; i--)
+						{
+						double coeff = 0.5 * (double)i / (double)borderSize + 0.5;
+						SolidBrush br = new SolidBrush (Color.FromArgb ((int)((double)brushes[3][2].Color.R * coeff),
+							(int)((double)brushes[3][2].Color.G * coeff), (int)((double)brushes[3][2].Color.B * coeff)));
+						layers[3].Descriptor.FillRectangle (br, borderSize - i, borderSize - i,
+							layers[3].Layer.Width - 2 * (borderSize - i), layers[3].Layer.Height - 2 * (borderSize - i));
+						br.Dispose ();
+						}
+
+					FlushText (3);
+					currentPhase++;
+					}
 				}
 
 			if (steps == 85)
 				{
-				layers.Add (new LogoDrawerLayer (0, (uint)(this.Height * 0.3), (uint)this.Width, (uint)(this.Height * 0.1) + 1));	// Слой панелей
-				layers[4].Descriptor.FillRectangle (brushes[2][2], 0, 0, layers[4].Layer.Width / 2, layers[4].Layer.Height);
-				layers[4].Descriptor.DrawString ("Source code", fonts[1], brushes[2][1], lineLeft, lineTop);
-				layers[4].Descriptor.FillRectangle (brushes[3][2], layers[4].Layer.Width / 2, 0,
-					layers[4].Layer.Width / 2, layers[4].Layer.Height);
-				layers[4].Descriptor.DrawString ("Output", fonts[2], brushes[2][1], layers[4].Layer.Width / 2 + lineLeft, lineTop);
+				layers.Add (new LogoDrawerLayer (0, (uint)(this.Height * commentFramePart),
+					(uint)this.Width, (uint)(this.Height * titlesFramePart) + 1));	// Слой панелей
+				layers[4].Descriptor.FillRectangle (brushes[2][2], 0, 0,
+					layers[4].Layer.Width / (showOutput ? 2 : 1), layers[4].Layer.Height);
+				layers[4].Descriptor.DrawString ("Source code", fonts[1], brushes[2][1], lineLeft, lineTop / 2);
+				if (showOutput)
+					{
+					layers[4].Descriptor.FillRectangle (brushes[3][2], layers[4].Layer.Width / 2, 0,
+						layers[4].Layer.Width / 2, layers[4].Layer.Height);
+					layers[4].Descriptor.DrawString ("Output", fonts[2], brushes[2][1],
+						layers[4].Layer.Width / 2 + lineLeft, lineTop / 2);
+					}
 				}
 
 			// Смена фазы
@@ -562,24 +547,6 @@ namespace ESHQSetupStub
 				{
 				// Одна буква
 				string letter = StringsSet[0][0].StringText.Substring ((int)steps++, 1);
-				/*switch (StringsSet[0][0].StringType)
-					{
-					case 1:
-						Field.DrawString (letter, StringsSet[0][0].StringFont, commentTextBrush, drawPoint);
-						break;
-
-					case 2:
-						Field.DrawString (letter, StringsSet[0][0].StringFont, codeTextBrush, drawPoint);
-						break;
-
-					case 3:
-						Field.DrawString (letter, StringsSet[0][0].StringFont, consoleTextBrush, drawPoint);
-						break;
-
-					case 4:
-						Field.DrawString (letter, StringsSet[0][0].StringFont, warningTextBrush, drawPoint);
-						break;
-					}*/
 				if ((StringsSet[0][0].StringType > 0) && (StringsSet[0][0].StringType <= 4))
 					{
 					Field.DrawString (letter, StringsSet[0][0].StringFont, brushes[(int)StringsSet[0][0].StringType][0], drawPoint);
@@ -643,6 +610,16 @@ namespace ESHQSetupStub
 				}
 			StreamReader SR = new StreamReader (FS, Encoding.GetEncoding (1251));
 
+			// Получение параметров
+			uint percentage, outputFrame;
+			if (!uint.TryParse (SR.ReadLine (), out percentage) || (percentage > 70) || (percentage < 30))
+				percentage = 30;
+			commentFramePart = (double)percentage / 100.0;
+
+			if (!uint.TryParse (SR.ReadLine (), out outputFrame))
+				outputFrame = 1;
+			showOutput = (outputFrame != 0);
+
 			// Загрузка текста
 			string s;
 			int debug = 0;
@@ -674,28 +651,15 @@ namespace ESHQSetupStub
 						pause = 0;	// Без ограничений
 					pause = (pause * 100) / (generalStep * 1000);	// Пауза во фреймах
 
+					if (!showOutput && (type == 3))
+						continue;
+
 					if (type != oldType)
 						{
 						oldType = type;
 						mainStringsSet.Add (new List<LogoDrawerString> ());
 						}
 
-					/*switch (type)
-						{
-						default:
-						case 1:
-						case 4:
-							mainStringsSet[mainStringsSet.Count - 1].Add (new LogoDrawerString (s.Substring (8), commentFont, pause, 5, type));
-							break;
-
-						case 2:
-							mainStringsSet[mainStringsSet.Count - 1].Add (new LogoDrawerString (s.Substring (8), codeFont, pause, 6, type));
-							break;
-
-						case 3:
-							mainStringsSet[mainStringsSet.Count - 1].Add (new LogoDrawerString (s.Substring (8), consoleFont, pause, 6, type));
-							break;
-						}*/
 					if ((type > 0) && (type <= 3))
 						{
 						mainStringsSet[mainStringsSet.Count - 1].Add (new LogoDrawerString (s.Substring (8),

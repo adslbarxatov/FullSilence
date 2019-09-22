@@ -149,15 +149,15 @@ namespace ESHQSetupStub
 			fonts.Add (new Font ("Consolas", 22, FontStyle.Regular));
 
 			// Загрузка параметров
-			int err = -2, err2;
-			if ((OFConfig.ShowDialog () != DialogResult.OK) || ((err2 = LoadText ()) < 0))
+			int err;
+			if ((OFConfig.FileName == "") && (OFConfig.ShowDialog () != DialogResult.OK) || ((err = LoadText ()) < 0))
 				{
-				MessageBox.Show ("Failed to load configuration: error " + err.ToString (), ProgramDescription.AssemblyTitle,
+				MessageBox.Show ("Failed to load configuration", ProgramDescription.AssemblyTitle,
 					 MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
 				this.Close ();
 				return;
 				}
-			debugMode = (err2 > 0);
+			debugMode = (err > 0);
 			SFVideo.FileName = Path.GetFileNameWithoutExtension (OFConfig.FileName) + ".avi";
 
 			// Подготовка к записи в видеопоток

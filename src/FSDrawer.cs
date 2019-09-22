@@ -159,7 +159,7 @@ namespace ESHQSetupStub
 
 			// Загрузка параметров
 			int err = -2;
-			if ((OFConfig.ShowDialog () != DialogResult.OK) || ((err = LoadConfig ()) != 0))
+			if ((OFConfig.FileName == "") && (OFConfig.ShowDialog () != DialogResult.OK) || ((err = LoadConfig ()) != 0))
 				{
 				MessageBox.Show ("Failed to load configuration: error " + err.ToString (), ProgramDescription.AssemblyTitle,
 					 MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
@@ -278,7 +278,7 @@ namespace ESHQSetupStub
 			CenterTextAlign.Checked = centerizeText;
 
 			// Метрики
-			for (int i = 0; i <= 8; i++)
+			for (int i = 0; i < LogoDrawerSupport.ObjectTypesCount; i++)
 				ObjectsTypeCombo.Items.Add (((LogoDrawerObjectTypes)i).ToString ());
 			if ((uint)objectsMetrics.ObjectsType >= ObjectsTypeCombo.Items.Count)
 				ObjectsTypeCombo.SelectedIndex = 0;
@@ -292,7 +292,7 @@ namespace ESHQSetupStub
 			SidesCountField.Maximum = LogoDrawerSupport.MaxPolygonsSidesCount;
 			SidesCountField.Value = objectsMetrics.PolygonsSidesCount;
 
-			for (int i = 0; i <= 8; i++)
+			for (int i = 0; i < LogoDrawerSupport.ObjectStartupPositionsCount; i++)
 				StartupSideCombo.Items.Add (((LogoDrawerObjectStartupPositions)i).ToString ());
 			if ((uint)objectsMetrics.StartupPosition >= StartupSideCombo.Items.Count)
 				StartupSideCombo.SelectedIndex = 0;

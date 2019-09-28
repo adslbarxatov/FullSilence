@@ -24,8 +24,7 @@ namespace ESHQSetupStub
 		// Текст
 		private List<List<LogoDrawerString>> mainStringsSet = new List<List<LogoDrawerString>> ();	// Тексты для отображения
 		private Point drawPoint;								// Текущая позиция отрисовки текста
-		private const int lineFeed = 38,						// Высота строки текста расширенного режима
-			lineLeft = 20,										// Начало и конец строки текста расширенного режима
+		private const int lineLeft = 20,						// Начало и конец строки текста расширенного режима
 			lineRight = 20,
 			lineTop = 20;										// Начало блока текста расширенного режима
 
@@ -143,14 +142,11 @@ namespace ESHQSetupStub
 			brushes[4].Add (new SolidBrush (Color.FromArgb (255, 128, 0)));
 			brushes[4].Add (new SolidBrush (Color.FromArgb (255, 128, 0)));
 
-			// Шрифты
-			fonts.Add (new Font ("Calibri", 24, FontStyle.Regular));
-			fonts.Add (new Font ("Consolas", 22, FontStyle.Regular));
-			fonts.Add (new Font ("Consolas", 22, FontStyle.Regular));
+			// Шрифты (перенесено в LoadConfig)
 
 			// Загрузка параметров
 			int err;
-			if ((OFConfig.FileName == "") && (OFConfig.ShowDialog () != DialogResult.OK) || ((err = LoadText ()) < 0))
+			if ((OFConfig.FileName == "") && (OFConfig.ShowDialog () != DialogResult.OK) || ((err = LoadConfig ()) < 0))
 				{
 				MessageBox.Show ("Failed to load configuration", ProgramDescription.AssemblyTitle,
 					 MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
@@ -332,10 +328,10 @@ namespace ESHQSetupStub
 				string ver = ProgramDescription.AssemblyVersion.Replace ("0", "");
 				while (ver.Substring (ver.Length - 1, 1) == ".")
 					ver = ver.Substring (0, ver.Length - 1);
-				SizeF sz = gr.MeasureString ("v " + ver, fonts[0]);
+				SizeF sz = gr.MeasureString (ProgramDescription.AssemblyMainName + " v " + ver, fonts[0]);
 
 				// Надпись
-				layers[1].Descriptor.DrawString ("v " + ver, fonts[0], brushes[1][0],
+				layers[1].Descriptor.DrawString (ProgramDescription.AssemblyMainName + " v " + ver, fonts[0], brushes[1][0],
 					layers[1].Layer.Width - sz.Width - sz.Height, layers[1].Layer.Height - 2 * sz.Height);
 
 				// Переход далее
@@ -435,12 +431,12 @@ namespace ESHQSetupStub
 					(uint)this.Width, (uint)(this.Height * titlesFramePart) + 1));	// Слой панелей
 				layers[4].Descriptor.FillRectangle (brushes[2][2], 0, 0,
 					layers[4].Layer.Width / (showOutput ? 2 : 1), layers[4].Layer.Height);
-				layers[4].Descriptor.DrawString ("Source code", fonts[1], brushes[2][1], lineLeft, lineTop / 2);
+				layers[4].Descriptor.DrawString ("Source code", fonts[3], brushes[2][1], lineLeft, lineTop / 2);
 				if (showOutput)
 					{
 					layers[4].Descriptor.FillRectangle (brushes[3][2], layers[4].Layer.Width / 2, 0,
 						layers[4].Layer.Width / 2, layers[4].Layer.Height);
-					layers[4].Descriptor.DrawString ("Output", fonts[2], brushes[2][1],
+					layers[4].Descriptor.DrawString ("Output", fonts[3], brushes[2][1],
 						layers[4].Layer.Width / 2 + lineLeft, lineTop / 2);
 					}
 				}
@@ -564,7 +560,7 @@ namespace ESHQSetupStub
 				if ((drawPoint.X > Field.VisibleClipBounds.Width - lineRight) || (letter == "\n"))
 					{
 					drawPoint.X = lineLeft;
-					drawPoint.Y += lineFeed;
+					drawPoint.Y += (int)(StringsSet[0][0].StringFont.Size * 1.65f);
 					}
 				}
 
@@ -577,7 +573,7 @@ namespace ESHQSetupStub
 				if (StringsSet[0].Count > 0)
 					{
 					drawPoint.X = lineLeft;
-					drawPoint.Y += lineFeed;
+					drawPoint.Y += (int)(StringsSet[0][0].StringFont.Size * 1.65f);
 					}
 				}
 
@@ -588,7 +584,7 @@ namespace ESHQSetupStub
 				}
 
 			// Обработка смены экрана
-			if (drawPoint.Y > Field.VisibleClipBounds.Height - lineFeed)
+			if (drawPoint.Y > (int)(Field.VisibleClipBounds.Height - 2 * lineTop))
 				{
 				drawPoint.Y = lineTop;
 				currentPhase++;
@@ -596,8 +592,10 @@ namespace ESHQSetupStub
 			}
 
 		// Метод загружает текст для отображения
-		private int LoadText ()
+		private int LoadConfig ()
 			{
+			char[] splitters = new char[] { ' ', '\t' };
+
 			// Открытие файла
 			FileStream FS = null;
 			try
@@ -611,17 +609,55 @@ namespace ESHQSetupStub
 			StreamReader SR = new StreamReader (FS, Encoding.GetEncoding (1251));
 
 			// Получение параметров
-			uint percentage, outputFrame;
-			if (!uint.TryParse (SR.ReadLine (), out percentage) || (percentage > 70) || (percentage < 30))
-				percentage = 30;
-			commentFramePart = (double)percentage / 100.0;
+			uint commentPartPercentage, outputFrame = 1;
+			string s = SR.ReadLine ();
+			string[] values = s.Split (splitters, StringSplitOptions.RemoveEmptyEntries);
 
-			if (!uint.TryParse (SR.ReadLine (), out outputFrame))
-				outputFrame = 1;
-			showOutput = (outputFrame != 0);
+			try
+				{
+				commentPartPercentage = uint.Parse (values[0]);
+				if ((commentPartPercentage > 70) || (commentPartPercentage < 30))
+					commentFramePart = 0.3;
+				else
+					commentFramePart = (double)commentPartPercentage / 100.0;
+
+				outputFrame = uint.Parse (values[1]);
+				showOutput = (outputFrame != 0);
+				}
+			catch
+				{
+				return -2;
+				}
+
+			uint commentFontSize, codeFontSize, consoleFontSize;
+			s = SR.ReadLine ();
+			values = s.Split (splitters, StringSplitOptions.RemoveEmptyEntries);
+
+			try
+				{
+				commentFontSize = uint.Parse (values[0]);
+				if ((commentFontSize > 24) || (commentFontSize < 10))
+					commentFontSize = 24;
+
+				codeFontSize = uint.Parse (values[1]);
+				if ((codeFontSize > 24) || (codeFontSize < 10))
+					codeFontSize = 24;
+
+				consoleFontSize = uint.Parse (values[2]);
+				if ((consoleFontSize > 24) || (consoleFontSize < 10))
+					consoleFontSize = 24;
+				}
+			catch
+				{
+				return -2;
+				}
+
+			fonts.Add (new Font ("Calibri", commentFontSize, FontStyle.Regular));
+			fonts.Add (new Font ("Consolas", codeFontSize, FontStyle.Regular));
+			fonts.Add (new Font ("Consolas", consoleFontSize, FontStyle.Regular));
+			fonts.Add (new Font ("Calibri", 22, FontStyle.Bold));
 
 			// Загрузка текста
-			string s;
 			int debug = 0;
 
 			// Чтение текста

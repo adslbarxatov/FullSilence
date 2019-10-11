@@ -20,6 +20,7 @@ namespace ESHQSetupStub
 		private const uint generalStep = 3;						// Длительность главного шага отображения
 		private string commandLine;								// Параметры командной строки
 		private bool debugMode = false;							// Режим отладки скрипта
+		private const uint frameTypesCount = 6;					// Количество доступных типов субокон
 
 		// Текст
 		private List<List<LogoDrawerString>> mainStringsSet = new List<List<LogoDrawerString>> ();	// Тексты для отображения
@@ -33,7 +34,8 @@ namespace ESHQSetupStub
 		private uint savingLayersCounter = 0,					// Счётчик сохранений
 			borderSize = 5,										// Ширина границы субокна
 			currentFrame = 0;									// Текущее субокно
-		private bool showOutput = true;							// Флаг наличия поля вывода программы
+		private bool answersMode = false,						// Замена окна вывода окном ответов
+			showOutput = true;									// Флаг наличия поля вывода программы
 		private double commentFramePart = 0.3;					// Процент поля, занимаемый окном комментариев
 		private const double titlesFramePart = 0.07;			// Высота поля заголовков субокон
 
@@ -126,21 +128,37 @@ namespace ESHQSetupStub
 			brushes[1].Add (new SolidBrush (Color.FromArgb (96, 96, 96)));		// Текст
 			brushes[1].Add (new SolidBrush (Color.FromArgb (255, 255, 255)));	// Фон
 			brushes[1].Add (new SolidBrush (Color.FromArgb (128, 128, 128)));	// Рамка
+			brushes[1].Add (new SolidBrush (Color.FromArgb (255, 255, 255)));	// Текст заголовка
 
 			brushes.Add (new List<SolidBrush> ());		// Кисти кода
 			brushes[2].Add (new SolidBrush (Color.FromArgb (0, 128, 255)));
 			brushes[2].Add (new SolidBrush (Color.FromArgb (255, 255, 255)));
 			brushes[2].Add (new SolidBrush (Color.FromArgb (0, 128, 255)));
+			brushes[2].Add (new SolidBrush (Color.FromArgb (255, 255, 255)));
 
 			brushes.Add (new List<SolidBrush> ());		// Кисти консоли
 			brushes[3].Add (new SolidBrush (Color.FromArgb (192, 192, 192)));
 			brushes[3].Add (new SolidBrush (Color.FromArgb (0, 0, 0)));
 			brushes[3].Add (new SolidBrush (Color.FromArgb (0, 128, 0)));
+			brushes[3].Add (new SolidBrush (Color.FromArgb (255, 255, 255)));
 
 			brushes.Add (new List<SolidBrush> ());		// Кисти предупреждений
 			brushes[4].Add (new SolidBrush (Color.FromArgb (255, 255, 255)));
 			brushes[4].Add (new SolidBrush (Color.FromArgb (255, 128, 0)));
-			brushes[4].Add (new SolidBrush (Color.FromArgb (255, 128, 0)));
+			brushes[4].Add (new SolidBrush (Color.FromArgb (0, 0, 0)));
+			brushes[4].Add (new SolidBrush (Color.FromArgb (0, 0, 0)));
+
+			brushes.Add (new List<SolidBrush> ());		// Неиспользуемый сет; рассчитан на поле исходного кода
+			brushes[5].Add (new SolidBrush (Color.FromArgb (0, 0, 0)));
+			brushes[5].Add (new SolidBrush (Color.FromArgb (0, 0, 0)));
+			brushes[5].Add (new SolidBrush (Color.FromArgb (0, 0, 0)));
+			brushes[5].Add (new SolidBrush (Color.FromArgb (0, 0, 0)));
+
+			brushes.Add (new List<SolidBrush> ());		// Кисти ответов (замещает поле вывода)
+			brushes[6].Add (new SolidBrush (Color.FromArgb (96, 96, 96)));
+			brushes[6].Add (new SolidBrush (Color.FromArgb (255, 255, 255)));
+			brushes[6].Add (new SolidBrush (Color.FromArgb (255, 255, 0)));
+			brushes[6].Add (new SolidBrush (Color.FromArgb (0, 128, 0)));
 
 			// Шрифты (перенесено в LoadConfig)
 
@@ -228,7 +246,7 @@ namespace ESHQSetupStub
 
 					if (currentPhase == Phases.MainTextDrawing)
 						{
-						DrawText (layers[(currentFrame > 3) ? 1 : (int)currentFrame].Descriptor, mainStringsSet);
+						DrawText (layers[(int)(currentFrame - 1) % 3 + 1].Descriptor, mainStringsSet);
 						}
 
 					// Сброс текста
@@ -281,18 +299,11 @@ namespace ESHQSetupStub
 		// Сброс текста
 		private void FlushText (uint LayerNumber)
 			{
-			if (LayerNumber >= layers.Count)
-				return;
-
-			if ((LayerNumber > 0) && (LayerNumber <= 3))
+			if ((LayerNumber > 0) && (LayerNumber <= frameTypesCount))
 				{
-				layers[(int)LayerNumber].Descriptor.FillRectangle (brushes[(int)LayerNumber][1], borderSize, borderSize,
-					layers[(int)LayerNumber].Layer.Width - borderSize * 2, layers[(int)LayerNumber].Layer.Height - borderSize * 2);
-				}
-			else if (LayerNumber == 4)
-				{
-				layers[1].Descriptor.FillRectangle (brushes[(int)LayerNumber][1], borderSize, borderSize,
-					layers[1].Layer.Width - borderSize * 2, layers[1].Layer.Height - borderSize * 2);
+				layers[((int)LayerNumber - 1) % 3 + 1].Descriptor.FillRectangle (brushes[(int)LayerNumber][1], borderSize, borderSize,
+					layers[((int)LayerNumber - 1) % 3 + 1].Layer.Width - borderSize * 2,
+					layers[((int)LayerNumber - 1) % 3 + 1].Layer.Height - borderSize * 2);
 				}
 			else
 				{
@@ -363,9 +374,10 @@ namespace ESHQSetupStub
 			{
 			steps++;
 
-			// Удаление слоя лого
+			// Окно комментариев
 			if (steps == 30)
 				{
+				// Удаление слоя лого
 				layers.RemoveAt (1);
 
 				// Подготовка слоёв
@@ -384,6 +396,7 @@ namespace ESHQSetupStub
 				currentPhase++;
 				}
 
+			// Окно кода
 			if (steps == 60)
 				{
 				layers.Add (new LogoDrawerLayer (0, (uint)(this.Height * (commentFramePart + titlesFramePart)),
@@ -403,6 +416,7 @@ namespace ESHQSetupStub
 				currentPhase++;
 				}
 
+			// Окно вывода или ответов
 			if (steps == 75)
 				{
 				layers.Add (new LogoDrawerLayer ((uint)this.Width / 2, (uint)(this.Height * (commentFramePart + titlesFramePart)),
@@ -413,14 +427,15 @@ namespace ESHQSetupStub
 					for (uint i = borderSize; i > 0; i--)
 						{
 						double coeff = 0.5 * (double)i / (double)borderSize + 0.5;
-						SolidBrush br = new SolidBrush (Color.FromArgb ((int)((double)brushes[3][2].Color.R * coeff),
-							(int)((double)brushes[3][2].Color.G * coeff), (int)((double)brushes[3][2].Color.B * coeff)));
+						SolidBrush br = new SolidBrush (Color.FromArgb ((int)((double)brushes[answersMode ? 6 : 3][2].Color.R * coeff),
+							(int)((double)brushes[answersMode ? 6 : 3][2].Color.G * coeff),
+							(int)((double)brushes[answersMode ? 6 : 3][2].Color.B * coeff)));
 						layers[3].Descriptor.FillRectangle (br, borderSize - i, borderSize - i,
 							layers[3].Layer.Width - 2 * (borderSize - i), layers[3].Layer.Height - 2 * (borderSize - i));
 						br.Dispose ();
 						}
 
-					FlushText (3);
+					FlushText (answersMode ? 6u : 3u);
 					currentPhase++;
 					}
 				}
@@ -431,12 +446,13 @@ namespace ESHQSetupStub
 					(uint)this.Width, (uint)(this.Height * titlesFramePart) + 1));	// Слой панелей
 				layers[4].Descriptor.FillRectangle (brushes[2][2], 0, 0,
 					layers[4].Layer.Width / (showOutput ? 2 : 1), layers[4].Layer.Height);
-				layers[4].Descriptor.DrawString ("Source code", fonts[3], brushes[2][1], lineLeft, lineTop / 2);
+				layers[4].Descriptor.DrawString ("Source code", fonts[3], brushes[2][3], lineLeft, lineTop / 2);
+
 				if (showOutput)
 					{
-					layers[4].Descriptor.FillRectangle (brushes[3][2], layers[4].Layer.Width / 2, 0,
+					layers[4].Descriptor.FillRectangle (brushes[answersMode ? 6 : 3][2], layers[4].Layer.Width / 2, 0,
 						layers[4].Layer.Width / 2, layers[4].Layer.Height);
-					layers[4].Descriptor.DrawString ("Output", fonts[3], brushes[2][1],
+					layers[4].Descriptor.DrawString (answersMode ? "Answer" : "Output", fonts[3], brushes[answersMode ? 6 : 3][3],
 						layers[4].Layer.Width / 2 + lineLeft, lineTop / 2);
 					}
 				}
@@ -543,7 +559,7 @@ namespace ESHQSetupStub
 				{
 				// Одна буква
 				string letter = StringsSet[0][0].StringText.Substring ((int)steps++, 1);
-				if ((StringsSet[0][0].StringType > 0) && (StringsSet[0][0].StringType <= 4))
+				if ((StringsSet[0][0].StringType > 0) && (StringsSet[0][0].StringType <= frameTypesCount))
 					{
 					Field.DrawString (letter, StringsSet[0][0].StringFont, brushes[(int)StringsSet[0][0].StringType][0], drawPoint);
 					}
@@ -681,8 +697,10 @@ namespace ESHQSetupStub
 					}
 				else
 					{
-					if (!uint.TryParse (s.Substring (0, 1), out type) || (type > 4))	// Тип 0 используется для сброса текущего типа
+					if (!uint.TryParse (s.Substring (0, 1), out type) || (type > frameTypesCount))	// Тип 0 используется для сброса текущего типа
 						type = 1;
+					answersMode = ((type == 6) || answersMode);
+
 					if (!uint.TryParse (s.Substring (2, 5), out pause) || (pause > 60000))	// Пауза в миллисекундах
 						pause = 0;	// Без ограничений
 					pause = (pause * 100) / (generalStep * 1000);	// Пауза во фреймах
@@ -696,15 +714,10 @@ namespace ESHQSetupStub
 						mainStringsSet.Add (new List<LogoDrawerString> ());
 						}
 
-					if ((type > 0) && (type <= 3))
+					if ((type > 0) && (type <= frameTypesCount))
 						{
 						mainStringsSet[mainStringsSet.Count - 1].Add (new LogoDrawerString (s.Substring (8),
-							fonts[(int)type - 1], pause, 6, type));
-						}
-					else if (type == 4)
-						{
-						mainStringsSet[mainStringsSet.Count - 1].Add (new LogoDrawerString (s.Substring (8),
-							fonts[0], pause, 6, type));
+							fonts[((int)type - 1) % 3], pause, 6, type));
 						}
 					else
 						{

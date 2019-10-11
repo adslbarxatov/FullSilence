@@ -1,5 +1,5 @@
 # FullSilence visualization tool v 2.5.3
-# CodeShow visualization tool v 1.4
+# CodeShow visualization tool v 1.5
 Фрагменты кода, используемые в рамках одноимённых проектов при визуализации текста
 #
 

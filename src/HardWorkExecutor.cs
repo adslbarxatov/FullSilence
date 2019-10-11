@@ -12,12 +12,13 @@ namespace ESHQSetupStub
 		{
 #if !SIMPLE_HWE
 		// Переменные
-		private bool allowClose = false;
-		private Bitmap progress, frameGreenGrey, frameBack;
+		private bool allowClose = false;						// Запрет выхода из формы до окончания работы
+		private Bitmap progress, frameGreenGrey, frameBack;		// Объекты-отрисовщики
 		private int currentPercentage = 0;
 		private Graphics g, gp;
 		private int currentOffset = 0;
 #endif
+		private object parameters;								// Параметры инициализации потока
 
 		/// <summary>
 		/// Возвращает объект-обвязку исполняемого процесса
@@ -43,8 +44,17 @@ namespace ESHQSetupStub
 			}
 		private int executionResult = 0;
 
-		// Переменные
-		private List<string> argument = new List<string> ();
+		/// <summary>
+		/// Возвращает результат выполняемых операций
+		/// </summary>
+		public string Result
+			{
+			get
+				{
+				return result;
+				}
+			}
+		private string result = "";
 
 #if !SIMPLE_HWE
 		/// <summary>
@@ -57,25 +67,38 @@ namespace ESHQSetupStub
 		public HardWorkExecutor (DoWorkEventHandler HardWorkProcess, string SetupPath, ArchiveOperator.SetupModes Mode, bool Uninstall)
 			{
 			// Инициализация
-			InitializeComponent ();
+			List<string> argument = new List<string> ();
 			argument.Add (SetupPath);
 			argument.Add (((int)Mode).ToString ());
 			argument.Add (Uninstall.ToString ());
-
-			// Настройка контролов
-			this.BackColor = ProgramDescription.MasterBackColor;
-			StateLabel.ForeColor = AbortButton.ForeColor = ProgramDescription.MasterTextColor;
-			AbortButton.BackColor = ProgramDescription.MasterButtonColor;
+			parameters = argument;
 
 			// Настройка BackgroundWorker
+			bw.ProgressChanged += ProgressChanged;
+
 			bw.WorkerReportsProgress = true;		// Разрешает возвраты изнутри процесса
 			bw.WorkerSupportsCancellation = true;	// Разрешает завершение процесса
 
 			bw.DoWork += ((HardWorkProcess != null) ? HardWorkProcess : DoWork);
-			bw.ProgressChanged += ProgressChanged;
 			bw.RunWorkerCompleted += RunWorkerCompleted;
 
 			// Инициализация ProgressBar
+			InitializeProgressBar ();
+
+			// Готово. Запуск
+			this.ShowDialog ();
+			}
+
+		// Инициализация ProgressBar
+		private void InitializeProgressBar ()
+			{
+			// Настройка контролов
+			InitializeComponent ();
+			this.BackColor = ProgramDescription.MasterBackColor;
+			StateLabel.ForeColor = AbortButton.ForeColor = ProgramDescription.MasterTextColor;
+			AbortButton.BackColor = ProgramDescription.MasterButtonColor;
+
+			// Инициализация
 			progress = new Bitmap (this.Width - 20, 30);
 			g = Graphics.FromHwnd (this.Handle);
 			gp = Graphics.FromImage (progress);
@@ -128,10 +151,9 @@ namespace ESHQSetupStub
 			grey.Dispose ();
 			back.Dispose ();
 
-			// Готово. Запуск
+			// Запуск таймера
 			DrawingTimer.Interval = 1;
 			DrawingTimer.Enabled = true;
-			this.ShowDialog ();
 			}
 
 		/// <summary>
@@ -158,7 +180,8 @@ namespace ESHQSetupStub
 		/// </summary>
 		/// <param name="HardWorkProcess">Выполняемый процесс</param>
 		/// <param name="Parameters">Передаваемые параметры выполнения</param>
-		public HardWorkExecutor (DoWorkEventHandler HardWorkProcess, object Parameters)
+		/// <param name="Caption">Сообщение для отображения (если не задано, окно прогресса не отображается)</param>
+		public HardWorkExecutor (DoWorkEventHandler HardWorkProcess, object Parameters, string Caption)
 			{
 			// Настройка BackgroundWorker
 			bw.WorkerReportsProgress = true;		// Разрешает возвраты изнутри процесса
@@ -166,15 +189,33 @@ namespace ESHQSetupStub
 
 			bw.DoWork += ((HardWorkProcess != null) ? HardWorkProcess : DoWork);
 			bw.RunWorkerCompleted += RunWorkerCompleted;
+			bw.ProgressChanged  += ProgressChanged;
 
-			// Запуск
-			bw.RunWorkerAsync (Parameters);
+			// Донастройка окна
+			if ((Caption == null) || (Caption == ""))
+				{
+				bw.RunWorkerAsync (Parameters);
+				}
+			else
+				{
+				parameters = Parameters;
+
+				InitializeProgressBar ();
+				currentPercentage = 100;
+
+				this.AbortButton.Visible = this.AbortButton.Enabled = false;
+				this.StateLabel.Text = Caption;
+				this.StateLabel.TextAlign = ContentAlignment.MiddleCenter;
+
+				// Запуск
+				this.ShowDialog ();
+				}
 			}
 
 		// Метод запускает выполнение процесса
 		private void HardWorkExecutor_Shown (object sender, System.EventArgs e)
 			{
-			bw.RunWorkerAsync (argument);
+			bw.RunWorkerAsync (parameters);
 			}
 
 #if !SIMPLE_HWE
@@ -182,16 +223,6 @@ namespace ESHQSetupStub
 		private void ProgressChanged (object sender, ProgressChangedEventArgs e)
 			{
 			// Обновление ProgressBar
-			/*if ((e.ProgressPercentage < 0) || (e.ProgressPercentage > 100))
-				{
-				MainProgress.Style = ProgressBarStyle.Marquee;
-				MainProgress.Value = 0;
-				}
-			else
-				{
-				MainProgress.Style = ProgressBarStyle.Blocks;
-				MainProgress.Value = e.ProgressPercentage;
-				}*/
 			currentPercentage = e.ProgressPercentage;
 
 			StateLabel.Text = (string)e.UserState;
@@ -210,6 +241,7 @@ namespace ESHQSetupStub
 				{
 				executionResult = -100;
 				}
+			result = e.Result.ToString ();
 			bw.Dispose ();
 
 			// Закрытие окна

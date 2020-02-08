@@ -63,7 +63,6 @@ namespace ESHQSetupStub
 		// Звук
 		private AudioManager am = new AudioManager ();			// Эмбиент
 		private uint soundStartFrame, soundEndFrame;			// Расчётные фреймы начала и остановки звука
-		//private MIDIManager mm = new MIDIManager ();			// MIDI-менеджер
 
 		// Видео
 		private VideoManager vm = new VideoManager ();			// Видеофайл (балластная инициализация)
@@ -175,7 +174,7 @@ namespace ESHQSetupStub
 
 			if (pp.WriteFramesToAVI && (SFVideo.ShowDialog () == DialogResult.OK))
 				{
-				vm = new VideoManager (SFVideo.FileName, 100.0 / generalStep, layers[0].Layer, true);
+				vm = new VideoManager (SFVideo.FileName, (int)(100 / generalStep), layers[0].Layer, true);
 
 				if (!vm.IsInited)
 					{
@@ -835,7 +834,7 @@ namespace ESHQSetupStub
 				layers[2] = new LogoDrawerLayer (0, 0, (uint)this.Width, (uint)this.Height);
 				}
 
-			// Отрисовка сфер со смещением
+			// Отрисовка объектов со смещением
 			for (int i = 0; i < objects.Count; i++)
 				{
 				objects[i].Move (objectsMetrics.Acceleration && (rnd.Next (3) == 0), objectsMetrics.Enlarging);

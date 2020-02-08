@@ -211,6 +211,8 @@ namespace ESHQSetupStub
 			{
 			// Контроль
 			LogoDrawerObjectMetrics metrics = LogoDrawerSupport.AlingMetrics (Metrics);
+			if (Randomizer == null)
+				return;
 
 			// Получение изображения
 			rnd = Randomizer;
@@ -266,6 +268,43 @@ namespace ESHQSetupStub
 						}
 
 					endX = x = rnd.Next ((int)ScreenWidth + ρ) - ρ / 2;
+					break;
+
+				case LogoDrawerObjectStartupPositions.LeftTop:
+				case LogoDrawerObjectStartupPositions.LeftBottom:
+				case LogoDrawerObjectStartupPositions.RightTop:
+				case LogoDrawerObjectStartupPositions.RightBottom:
+					while ((speedX == 0) && (speedY == 0))
+						{
+						speedX = rnd.Next ((int)metrics.MinSpeed, (int)metrics.MaxSpeed + 1);
+						speedY = rnd.Next ((int)metrics.MinSpeed, (int)metrics.MaxSpeed + 1);
+						}
+
+					if ((metrics.StartupPosition == LogoDrawerObjectStartupPositions.LeftTop) ||
+						(metrics.StartupPosition == LogoDrawerObjectStartupPositions.RightTop))
+						{
+						y = -2 * ρ;
+						endY = (int)ScreenHeight + 2 * ρ;
+						}
+					else
+						{
+						y = (int)ScreenHeight + 2 * ρ;
+						endY = -2 * ρ;
+						speedY *= -1;
+						}
+
+					if ((metrics.StartupPosition == LogoDrawerObjectStartupPositions.LeftTop) ||
+						(metrics.StartupPosition == LogoDrawerObjectStartupPositions.LeftBottom))
+						{
+						x = -2 * ρ;
+						endX = (int)ScreenWidth + 2 * ρ;
+						}
+					else
+						{
+						x = (int)ScreenWidth + 2 * ρ;
+						endX = -2 * ρ;
+						speedX *= -1;
+						}
 					break;
 
 				case LogoDrawerObjectStartupPositions.CenterRandom:
@@ -554,6 +593,26 @@ namespace ESHQSetupStub
 		/// К центру со всех сторон
 		/// </summary>
 		ToCenterRandom = 9,
+
+		/// <summary>
+		/// Слева сверху
+		/// </summary>
+		LeftTop = 10,
+
+		/// <summary>
+		/// Справа сверху
+		/// </summary>
+		RightTop = 11,
+
+		/// <summary>
+		/// Слева снизу
+		/// </summary>
+		LeftBottom = 12,
+
+		/// <summary>
+		/// Справа снизу
+		/// </summary>
+		RightBottom = 13
 		}
 
 	/// <summary>
@@ -784,6 +843,8 @@ namespace ESHQSetupStub
 			{
 			// Контроль
 			LogoDrawerObjectMetrics metrics = LogoDrawerSupport.AlingMetrics (Metrics);
+			if (Randomizer == null)
+				return;
 
 			// Генерация параметров изображения
 			rnd = Randomizer;
@@ -855,6 +916,43 @@ namespace ESHQSetupStub
 						}
 
 					endX = x = rnd.Next ((int)ScreenWidth + 2 * ρ) - ρ;
+					break;
+
+				case LogoDrawerObjectStartupPositions.LeftTop:
+				case LogoDrawerObjectStartupPositions.LeftBottom:
+				case LogoDrawerObjectStartupPositions.RightTop:
+				case LogoDrawerObjectStartupPositions.RightBottom:
+					while ((speedX == 0) && (speedY == 0))
+						{
+						speedX = rnd.Next ((int)metrics.MinSpeed, (int)metrics.MaxSpeed + 1);
+						speedY = rnd.Next ((int)metrics.MinSpeed, (int)metrics.MaxSpeed + 1);
+						}
+
+					if ((metrics.StartupPosition == LogoDrawerObjectStartupPositions.LeftTop) ||
+						(metrics.StartupPosition == LogoDrawerObjectStartupPositions.RightTop))
+						{
+						y = -2 * ρ;
+						endY = (int)ScreenHeight + 2 * ρ;
+						}
+					else
+						{
+						y = (int)ScreenHeight + 2 * ρ;
+						endY = -2 * ρ;
+						speedY *= -1;
+						}
+
+					if ((metrics.StartupPosition == LogoDrawerObjectStartupPositions.LeftTop) ||
+						(metrics.StartupPosition == LogoDrawerObjectStartupPositions.LeftBottom))
+						{
+						x = -2 * ρ;
+						endX = (int)ScreenWidth + 2 * ρ;
+						}
+					else
+						{
+						x = (int)ScreenWidth + 2 * ρ;
+						endX = -2 * ρ;
+						speedX *= -1;
+						}
 					break;
 
 				case LogoDrawerObjectStartupPositions.CenterRandom:
@@ -1327,6 +1425,8 @@ namespace ESHQSetupStub
 			{
 			// Контроль
 			LogoDrawerObjectMetrics metrics = LogoDrawerSupport.AlingMetrics (Metrics);
+			if (Randomizer == null)
+				return;
 
 			// Генерация параметров изображения
 			rnd = Randomizer;
@@ -1668,6 +1768,8 @@ namespace ESHQSetupStub
 			{
 			// Контроль
 			LogoDrawerObjectMetrics metrics = LogoDrawerSupport.AlingMetrics (Metrics);
+			if (Randomizer == null)
+				return;
 
 			// Генерация параметров изображения
 			rnd = Randomizer;
@@ -1865,12 +1967,8 @@ namespace ESHQSetupStub
 
 			g.TranslateTransform (sourceImage.Width / 2, sourceImage.Height / 2);			// Центровка поворота
 			g.RotateTransform (φ);
-			/*if ((Enlarging > 0) || (Enlarging < 0) && (sourceImage.Width > -Enlarging) && (sourceImage.Height > -Enlarging))
-				g.DrawImage (sourceImage, -sourceImage.Width / 2, -sourceImage.Height / 2, sourceImage.Width + Enlarging ,
-					sourceImage.Height + (int)((double)sourceImage.Height * (double)Enlarging / (double)sourceImage.Width));
-			else*/
-			g.DrawImage (sourceImage, -sourceImage.Width / 2, -sourceImage.Height / 2);
 
+			g.DrawImage (sourceImage, -sourceImage.Width / 2, -sourceImage.Height / 2);
 			g.Dispose ();
 
 			// Контроль

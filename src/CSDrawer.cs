@@ -155,10 +155,10 @@ namespace ESHQSetupStub
 			brushes[5].Add (new SolidBrush (Color.FromArgb (0, 0, 0)));
 
 			brushes.Add (new List<SolidBrush> ());		// Кисти ответов (замещает поле вывода)
-			brushes[6].Add (new SolidBrush (Color.FromArgb (96, 96, 96)));
+			brushes[6].Add (new SolidBrush (Color.FromArgb (0, 128, 0)));
 			brushes[6].Add (new SolidBrush (Color.FromArgb (255, 255, 255)));
 			brushes[6].Add (new SolidBrush (Color.FromArgb (255, 255, 0)));
-			brushes[6].Add (new SolidBrush (Color.FromArgb (0, 128, 0)));
+			brushes[6].Add (new SolidBrush (Color.FromArgb (0, 192, 0)));
 
 			// Шрифты (перенесено в LoadConfig)
 
@@ -299,13 +299,13 @@ namespace ESHQSetupStub
 		// Сброс текста
 		private void FlushText (uint LayerNumber)
 			{
-			if ((LayerNumber > 0) && (LayerNumber <= frameTypesCount))
+			if ((LayerNumber > 0) && (LayerNumber <= frameTypesCount))	// Не выполнять никаких действий в нулевом режиме
 				{
 				layers[((int)LayerNumber - 1) % 3 + 1].Descriptor.FillRectangle (brushes[(int)LayerNumber][1], borderSize, borderSize,
 					layers[((int)LayerNumber - 1) % 3 + 1].Layer.Width - borderSize * 2,
 					layers[((int)LayerNumber - 1) % 3 + 1].Layer.Height - borderSize * 2);
 				}
-			else
+			else if (LayerNumber > frameTypesCount)
 				{
 				layers[1].Descriptor.FillRectangle (brushes[1][1], borderSize, borderSize,
 					layers[1].Layer.Width - borderSize * 2, layers[1].Layer.Height - borderSize * 2);
@@ -559,11 +559,11 @@ namespace ESHQSetupStub
 				{
 				// Одна буква
 				string letter = StringsSet[0][0].StringText.Substring ((int)steps++, 1);
-				if ((StringsSet[0][0].StringType > 0) && (StringsSet[0][0].StringType <= frameTypesCount))
+				if ((StringsSet[0][0].StringType > 0) && (StringsSet[0][0].StringType <= frameTypesCount))	// Нулевой режим игнорировать
 					{
 					Field.DrawString (letter, StringsSet[0][0].StringFont, brushes[(int)StringsSet[0][0].StringType][0], drawPoint);
 					}
-				else
+				else if (StringsSet[0][0].StringType > frameTypesCount)
 					{
 					Field.DrawString (letter, StringsSet[0][0].StringFont, brushes[1][0], drawPoint);
 					}
@@ -718,6 +718,11 @@ namespace ESHQSetupStub
 						{
 						mainStringsSet[mainStringsSet.Count - 1].Add (new LogoDrawerString (s.Substring (8),
 							fonts[((int)type - 1) % 3], pause, 6, type));
+						}
+					else if (type == 0)
+						{
+						mainStringsSet[mainStringsSet.Count - 1].Add (new LogoDrawerString (s.Substring (8),
+							fonts[0], pause, 6, type));
 						}
 					else
 						{

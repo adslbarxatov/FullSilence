@@ -10,15 +10,18 @@ namespace ESHQSetupStub
 	/// </summary>
 	public partial class HardWorkExecutor:Form
 		{
-#if !SIMPLE_HWE
 		// Переменные
 		private bool allowClose = false;						// Запрет выхода из формы до окончания работы
 		private Bitmap progress, frameGreenGrey, frameBack;		// Объекты-отрисовщики
-		private int currentPercentage = 0;
 		private Graphics g, gp;
-		private int currentOffset = 0;
-#endif
+		private int currentXOffset = 0;
+		private int currentPercentage = 0;
 		private object parameters;								// Параметры инициализации потока
+
+		/// <summary>
+		/// Длина шкалы прогресса
+		/// </summary>
+		public const uint ProgressBarSize = 1000;
 
 		/// <summary>
 		/// Возвращает объект-обвязку исполняемого процесса
@@ -88,6 +91,7 @@ namespace ESHQSetupStub
 			// Готово. Запуск
 			this.ShowDialog ();
 			}
+#endif
 
 		// Инициализация ProgressBar
 		private void InitializeProgressBar ()
@@ -156,6 +160,7 @@ namespace ESHQSetupStub
 			DrawingTimer.Enabled = true;
 			}
 
+#if !SIMPLE_HWE
 		/// <summary>
 		/// Конструктор. Выполняет проверку доступной версии обновления в скрытом режиме
 		/// </summary>
@@ -189,7 +194,7 @@ namespace ESHQSetupStub
 
 			bw.DoWork += ((HardWorkProcess != null) ? HardWorkProcess : DoWork);
 			bw.RunWorkerCompleted += RunWorkerCompleted;
-			bw.ProgressChanged  += ProgressChanged;
+			bw.ProgressChanged += ProgressChanged;
 
 			// Донастройка окна
 			if ((Caption == null) || (Caption == ""))
@@ -201,7 +206,7 @@ namespace ESHQSetupStub
 				parameters = Parameters;
 
 				InitializeProgressBar ();
-				currentPercentage = 100;
+				currentPercentage = (int)ProgressBarSize;
 
 				this.AbortButton.Visible = this.AbortButton.Enabled = false;
 				this.StateLabel.Text = Caption;
@@ -218,7 +223,6 @@ namespace ESHQSetupStub
 			bw.RunWorkerAsync (parameters);
 			}
 
-#if !SIMPLE_HWE
 		// Метод обрабатывает изменение состояния процесса
 		private void ProgressChanged (object sender, ProgressChangedEventArgs e)
 			{
@@ -227,7 +231,6 @@ namespace ESHQSetupStub
 
 			StateLabel.Text = (string)e.UserState;
 			}
-#endif
 
 		// Метод обрабатывает завершение процесса
 		private void RunWorkerCompleted (object sender, RunWorkerCompletedEventArgs e)
@@ -245,10 +248,8 @@ namespace ESHQSetupStub
 			bw.Dispose ();
 
 			// Закрытие окна
-#if !SIMPLE_HWE
 			allowClose = true;
 			this.Close ();
-#endif
 			}
 
 		// Кнопка инициирует остановку процесса
@@ -261,7 +262,7 @@ namespace ESHQSetupStub
 		private void DoWork (object sender, DoWorkEventArgs e)
 			{
 			// Собственно, выполняемый процесс
-			for (int i = 0; i < 100; i++)
+			for (int i = 0; i < ProgressBarSize; i++)
 				{
 				System.Threading.Thread.Sleep (500);
 				((BackgroundWorker)sender).ReportProgress (i);	// Возврат прогресса
@@ -281,7 +282,6 @@ namespace ESHQSetupStub
 		// Закрытие формы
 		private void HardWorkExecutor_FormClosing (object sender, FormClosingEventArgs e)
 			{
-#if !SIMPLE_HWE
 			e.Cancel = !allowClose;
 			DrawingTimer.Enabled = false;
 
@@ -295,25 +295,22 @@ namespace ESHQSetupStub
 				frameGreenGrey.Dispose ();
 			if (frameBack != null)
 				frameBack.Dispose ();
-#endif
 			}
 
 		// Отрисовка прогресс-бара
 		private void DrawingTimer_Tick (object sender, System.EventArgs e)
 			{
-#if !SIMPLE_HWE
 			// Отрисовка текущей позиции
-			gp.DrawImage (frameGreenGrey, currentOffset, 0);
+			gp.DrawImage (frameGreenGrey, currentXOffset, 0);
 			gp.DrawImage (frameBack, -9 * this.Width / 4, 0);
-			gp.DrawImage (frameBack, (int)((double)(progress.Width - progress.Height / 2) / 100.0 *
-				(double)currentPercentage) - this.Width / 4, 0);
+			gp.DrawImage (frameBack, currentPercentage * (progress.Width - progress.Height / 2) / ProgressBarSize -
+				this.Width / 4, 0);
 
 			g.DrawImage (progress, 10, StateLabel.Top + StateLabel.Height + 10);
 
 			// Смещение
-			if (currentOffset++ >= -2 * this.Width / 4)
-				currentOffset = -4 * this.Width / 4;
-#endif
+			if (currentXOffset++ >= -2 * this.Width / 4)
+				currentXOffset = -4 * this.Width / 4;
 			}
 		}
 	}

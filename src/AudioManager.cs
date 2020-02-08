@@ -3,6 +3,7 @@ using System.Media;
 
 namespace ESHQSetupStub
 	{
+#if AUDIO || VIDEO
 	/// <summary>
 	/// Класс предоставляет методы воспроизведения аудиофайлов
 	/// </summary>
@@ -107,4 +108,5 @@ namespace ESHQSetupStub
 				ambient.Stop ();
 			}
 		}
+#endif
 	}

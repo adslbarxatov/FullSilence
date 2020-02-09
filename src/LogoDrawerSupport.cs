@@ -1509,6 +1509,43 @@ namespace ESHQSetupStub
 					endX = x = rnd.Next ((int)ScreenWidth + sourceImage.Width) - sourceImage.Width / 2;
 					break;
 
+				case LogoDrawerObjectStartupPositions.LeftTop:
+				case LogoDrawerObjectStartupPositions.LeftBottom:
+				case LogoDrawerObjectStartupPositions.RightTop:
+				case LogoDrawerObjectStartupPositions.RightBottom:
+					while ((speedX == 0) && (speedY == 0))
+						{
+						speedX = rnd.Next ((int)metrics.MinSpeed, (int)metrics.MaxSpeed + 1);
+						speedY = rnd.Next ((int)metrics.MinSpeed, (int)metrics.MaxSpeed + 1);
+						}
+
+					if ((metrics.StartupPosition == LogoDrawerObjectStartupPositions.LeftTop) ||
+						(metrics.StartupPosition == LogoDrawerObjectStartupPositions.RightTop))
+						{
+						y = -sourceImage.Height;
+						endY = (int)ScreenHeight + sourceImage.Height;
+						}
+					else
+						{
+						y = (int)ScreenHeight + sourceImage.Height;
+						endY = -sourceImage.Height;
+						speedY *= -1;
+						}
+
+					if ((metrics.StartupPosition == LogoDrawerObjectStartupPositions.LeftTop) ||
+						(metrics.StartupPosition == LogoDrawerObjectStartupPositions.LeftBottom))
+						{
+						x = -sourceImage.Width;
+						endX = (int)ScreenWidth + sourceImage.Width;
+						}
+					else
+						{
+						x = (int)ScreenWidth + sourceImage.Width;
+						endX = -sourceImage.Width;
+						speedX *= -1;
+						}
+					break;
+
 				case LogoDrawerObjectStartupPositions.CenterRandom:
 				case LogoDrawerObjectStartupPositions.Random:
 				case LogoDrawerObjectStartupPositions.CenterFlat:
@@ -1856,6 +1893,43 @@ namespace ESHQSetupStub
 						}
 
 					endX = x = rnd.Next ((int)ScreenWidth + sourceImage.Width) - sourceImage.Width / 2;
+					break;
+
+				case LogoDrawerObjectStartupPositions.LeftTop:
+				case LogoDrawerObjectStartupPositions.LeftBottom:
+				case LogoDrawerObjectStartupPositions.RightTop:
+				case LogoDrawerObjectStartupPositions.RightBottom:
+					while ((speedX == 0) && (speedY == 0))
+						{
+						speedX = rnd.Next ((int)metrics.MinSpeed, (int)metrics.MaxSpeed + 1);
+						speedY = rnd.Next ((int)metrics.MinSpeed, (int)metrics.MaxSpeed + 1);
+						}
+
+					if ((metrics.StartupPosition == LogoDrawerObjectStartupPositions.LeftTop) ||
+						(metrics.StartupPosition == LogoDrawerObjectStartupPositions.RightTop))
+						{
+						y = -sourceImage.Height;
+						endY = (int)ScreenHeight + sourceImage.Height;
+						}
+					else
+						{
+						y = (int)ScreenHeight + sourceImage.Height;
+						endY = -sourceImage.Height;
+						speedY *= -1;
+						}
+
+					if ((metrics.StartupPosition == LogoDrawerObjectStartupPositions.LeftTop) ||
+						(metrics.StartupPosition == LogoDrawerObjectStartupPositions.LeftBottom))
+						{
+						x = -sourceImage.Width;
+						endX = (int)ScreenWidth + sourceImage.Width;
+						}
+					else
+						{
+						x = (int)ScreenWidth + sourceImage.Width;
+						endX = -sourceImage.Width;
+						speedX *= -1;
+						}
 					break;
 
 				case LogoDrawerObjectStartupPositions.CenterRandom:

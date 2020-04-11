@@ -6,7 +6,7 @@ using System.Text;
 using System.Windows.Forms;
 
 // Классы
-namespace ESHQSetupStub
+namespace RD_AAOW
 	{
 	/// <summary>
 	/// Класс обеспечивает отображение визуализации проекта
@@ -184,7 +184,7 @@ namespace ESHQSetupStub
 				{
 				vm = new VideoManager (SFVideo.FileName, 100.0 / generalStep, layers[0].Layer, true);
 
-				if (!vm.IsInited)
+				if (!vm.IsCreated)
 					{
 					MessageBox.Show ("Failed to initialize AVI stream", ProgramDescription.AssemblyTitle,
 						 MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
@@ -323,12 +323,12 @@ namespace ESHQSetupStub
 			Bitmap b;
 			steps += 6;
 
-			b = ESHQSetupStub.Properties.Resources.FUPL.Clone (new Rectangle (0, 0,
-				(int)((double)ESHQSetupStub.Properties.Resources.FUPL.Width *
-				(0.5 + LogoDrawerSupport.Cosinus (steps - 180.0) / 2.0)) + 1, ESHQSetupStub.Properties.Resources.FUPL.Height),
-				ESHQSetupStub.Properties.Resources.FUPL.PixelFormat);
-			layers[1].Descriptor.DrawImage (b, (this.Width - ESHQSetupStub.Properties.Resources.FUPL.Width) / 2,
-				(this.Height - ESHQSetupStub.Properties.Resources.FUPL.Height) / 2);
+			b = RD_AAOW.Properties.CSResources.FUPL.Clone (new Rectangle (0, 0,
+				(int)((double)RD_AAOW.Properties.CSResources.FUPL.Width *
+				(0.5 + LogoDrawerSupport.Cosinus (steps - 180.0) / 2.0)) + 1, RD_AAOW.Properties.CSResources.FUPL.Height),
+				RD_AAOW.Properties.CSResources.FUPL.PixelFormat);
+			layers[1].Descriptor.DrawImage (b, (this.Width - RD_AAOW.Properties.CSResources.FUPL.Width) / 2,
+				(this.Height - RD_AAOW.Properties.CSResources.FUPL.Height) / 2);
 			b.Dispose ();
 
 			if (steps >= 173)
@@ -475,7 +475,7 @@ namespace ESHQSetupStub
 				}
 
 			// Отрисовка
-			if (vm.IsInited)
+			if (vm.IsCreated)
 				{
 				Bitmap b = (Bitmap)layers[0].Layer.Clone ();
 				vm.AddFrame (b);

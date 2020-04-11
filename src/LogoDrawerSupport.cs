@@ -4,7 +4,7 @@ using System.Drawing;
 using System.IO;
 using System.Text;
 
-namespace ESHQSetupStub
+namespace RD_AAOW
 	{
 	/// <summary>
 	/// Класс описывает строку, предназначенную для вывода на экран в расширенном режиме

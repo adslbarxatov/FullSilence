@@ -2,7 +2,7 @@
 using System.Threading;
 using System.Windows.Forms;
 
-namespace ESHQSetupStub
+namespace RD_AAOW
 	{
 	/// <summary>
 	/// Класс описывает основное приложение

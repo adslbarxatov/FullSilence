@@ -1,9 +1,10 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Drawing;
 using System.Windows.Forms;
 
-namespace ESHQSetupStub
+namespace RD_AAOW
 	{
 	/// <summary>
 	/// Класс предоставляет интерфейс визуализации прогресса установки/удаления программы
@@ -14,8 +15,8 @@ namespace ESHQSetupStub
 		private bool allowClose = false;						// Запрет выхода из формы до окончания работы
 		private Bitmap progress, frameGreenGrey, frameBack;		// Объекты-отрисовщики
 		private Graphics g, gp;
-		private int currentXOffset = 0;
-		private int currentPercentage = 0;
+		private int currentXOffset = 0,
+			currentPercentage = 0;
 		private object parameters;								// Параметры инициализации потока
 
 		/// <summary>
@@ -58,40 +59,6 @@ namespace ESHQSetupStub
 				}
 			}
 		private string result = "";
-
-#if !SIMPLE_HWE
-		/// <summary>
-		/// Конструктор. Выполняет настройку и запуск процесса установки/удаления
-		/// </summary>
-		/// <param name="HardWorkProcess">Процесс, выполняющий установку/удаление</param>
-		/// <param name="Mode">Режим установки/удаления файлов</param>
-		/// <param name="SetupPath">Путь установки/удаления</param>
-		/// <param name="Uninstall">Флаг удаления ранее установленных файлов</param>
-		public HardWorkExecutor (DoWorkEventHandler HardWorkProcess, string SetupPath, ArchiveOperator.SetupModes Mode, bool Uninstall)
-			{
-			// Инициализация
-			List<string> argument = new List<string> ();
-			argument.Add (SetupPath);
-			argument.Add (((int)Mode).ToString ());
-			argument.Add (Uninstall.ToString ());
-			parameters = argument;
-
-			// Настройка BackgroundWorker
-			bw.ProgressChanged += ProgressChanged;
-
-			bw.WorkerReportsProgress = true;		// Разрешает возвраты изнутри процесса
-			bw.WorkerSupportsCancellation = true;	// Разрешает завершение процесса
-
-			bw.DoWork += ((HardWorkProcess != null) ? HardWorkProcess : DoWork);
-			bw.RunWorkerCompleted += RunWorkerCompleted;
-
-			// Инициализация ProgressBar
-			InitializeProgressBar ();
-
-			// Готово. Запуск
-			this.ShowDialog ();
-			}
-#endif
 
 		// Инициализация ProgressBar
 		private void InitializeProgressBar ()
@@ -142,7 +109,7 @@ namespace ESHQSetupStub
 			// Объём
 			for (int i = 0; i < frameGreenGrey.Height; i++)
 				{
-				Pen p = new Pen (Color.FromArgb (200 - (int)(200.0 * LogoDrawerSupport.Sinus (180.0 * (double)i /
+				Pen p = new Pen (Color.FromArgb (200 - (int)(200.0 * Math.Sin (Math.PI * (double)i /
 					(double)frameGreenGrey.Height)), this.BackColor));
 				g1.DrawLine (p, 0, i, frameGreenGrey.Width, i);
 				p.Dispose ();
@@ -161,6 +128,38 @@ namespace ESHQSetupStub
 			}
 
 #if !SIMPLE_HWE
+		/// <summary>
+		/// Конструктор. Выполняет настройку и запуск процесса установки/удаления
+		/// </summary>
+		/// <param name="HardWorkProcess">Процесс, выполняющий установку/удаление</param>
+		/// <param name="Mode">Режим установки/удаления файлов</param>
+		/// <param name="SetupPath">Путь установки/удаления</param>
+		/// <param name="Uninstall">Флаг удаления ранее установленных файлов</param>
+		public HardWorkExecutor (DoWorkEventHandler HardWorkProcess, string SetupPath, ArchiveOperator.SetupModes Mode, bool Uninstall)
+			{
+			// Инициализация
+			List<string> argument = new List<string> ();
+			argument.Add (SetupPath);
+			argument.Add (((int)Mode).ToString ());
+			argument.Add (Uninstall.ToString ());
+			parameters = argument;
+
+			// Настройка BackgroundWorker
+			bw.ProgressChanged += ProgressChanged;
+
+			bw.WorkerReportsProgress = true;		// Разрешает возвраты изнутри процесса
+			bw.WorkerSupportsCancellation = true;	// Разрешает завершение процесса
+
+			bw.DoWork += ((HardWorkProcess != null) ? HardWorkProcess : DoWork);
+			bw.RunWorkerCompleted += RunWorkerCompleted;
+
+			// Инициализация ProgressBar
+			InitializeProgressBar ();
+
+			// Готово. Запуск
+			this.ShowDialog ();
+			}
+
 		/// <summary>
 		/// Конструктор. Выполняет проверку доступной версии обновления в скрытом режиме
 		/// </summary>
@@ -217,6 +216,29 @@ namespace ESHQSetupStub
 				}
 			}
 
+		/// <summary>
+		/// Конструктор. Выполняет указанное действие
+		/// </summary>
+		/// <param name="HardWorkProcess">Выполняемый процесс</param>
+		public HardWorkExecutor (DoWorkEventHandler HardWorkProcess)
+			{
+			// Настройка BackgroundWorker
+			bw.WorkerReportsProgress = true;		// Разрешает возвраты изнутри процесса
+			bw.WorkerSupportsCancellation = true;	// Разрешает завершение процесса
+
+			bw.DoWork += ((HardWorkProcess != null) ? HardWorkProcess : DoWork);
+			bw.RunWorkerCompleted += RunWorkerCompleted;
+			bw.ProgressChanged += ProgressChanged;
+
+			// Донастройка окна
+			InitializeProgressBar ();
+			currentPercentage = (int)ProgressBarSize;
+			AbortButton.FlatStyle = FlatStyle.Standard;
+
+			// Запуск
+			this.ShowDialog ();
+			}
+
 		// Метод запускает выполнение процесса
 		private void HardWorkExecutor_Shown (object sender, System.EventArgs e)
 			{
@@ -238,13 +260,16 @@ namespace ESHQSetupStub
 			// Завершение работы исполнителя
 			try
 				{
-				executionResult = int.Parse (e.Result.ToString ());
+				if (e.Result != null)
+					{
+					executionResult = int.Parse (e.Result.ToString ());
+					result = e.Result.ToString ();
+					}
 				}
 			catch
 				{
 				executionResult = -100;
 				}
-			result = e.Result.ToString ();
 			bw.Dispose ();
 
 			// Закрытие окна

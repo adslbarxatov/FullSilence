@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Media;
 
-namespace ESHQSetupStub
+namespace RD_AAOW
 	{
 #if AUDIO || VIDEO
 	/// <summary>

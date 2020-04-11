@@ -7,7 +7,7 @@ using System.Text;
 using System.Windows.Forms;
 
 // Классы
-namespace ESHQSetupStub
+namespace RD_AAOW
 	{
 	/// <summary>
 	/// Класс обеспечивает отображение визуализации текста
@@ -167,7 +167,8 @@ namespace ESHQSetupStub
 				}
 			SFVideo.FileName = Path.GetFileNameWithoutExtension (OFConfig.FileName) + ".avi";
 
-			pp = new ParametersPicker ();	// Запрос параметров отрисовки
+			pp = new ParametersPicker (true);	// Запрос параметров отрисовки
+			pp.ShowDialog ();
 
 			// Подготовка к записи в видеопоток
 			layers.Add (new LogoDrawerLayer (0, 0, (uint)this.Width, (uint)this.Height));	// Главный слой
@@ -176,7 +177,7 @@ namespace ESHQSetupStub
 				{
 				vm = new VideoManager (SFVideo.FileName, (int)(100 / generalStep), layers[0].Layer, true);
 
-				if (!vm.IsInited)
+				if (!vm.IsCreated)
 					{
 					MessageBox.Show ("Failed to initialize AVI stream", ProgramDescription.AssemblyTitle,
 						 MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
@@ -186,7 +187,7 @@ namespace ESHQSetupStub
 				}
 
 			// Донастройка окна
-			if (!vm.IsInited)
+			if (!vm.IsCreated)
 				{
 				scale = 0.7f;
 				this.Width = (int)(this.Width * scale);
@@ -364,7 +365,7 @@ namespace ESHQSetupStub
 				// Создание фрагментов лого
 				case Phases.LayersPrecache:
 					// Запуск звуковой дорожки (используется для запуска звука)
-					if (!vm.IsInited)
+					if (!vm.IsCreated)
 						PlayAmbience ();
 
 					PrepareLayers ();
@@ -386,7 +387,7 @@ namespace ESHQSetupStub
 					if (steps++ > 150)
 						{
 						// Запуск звуковой дорожки (используется для фиксации момента запуска)
-						if (vm.IsInited)
+						if (vm.IsCreated)
 							PlayAmbience ();
 
 						PrepareMainScene ();
@@ -884,7 +885,7 @@ namespace ESHQSetupStub
 				}
 
 			// Отрисовка
-			if (vm.IsInited)
+			if (vm.IsCreated)
 				{
 				Bitmap b = (Bitmap)layers[0].Layer.Clone ();
 				vm.AddFrame (b);
@@ -1267,7 +1268,7 @@ namespace ESHQSetupStub
 				return;
 
 			// 'Живой' звук только в случае отображения на экране
-			if (!vm.IsInited)
+			if (!vm.IsCreated)
 				am.PlayAudio ();
 			else
 				vm.AddAudio (am);

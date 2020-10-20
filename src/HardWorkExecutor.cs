@@ -12,12 +12,11 @@ namespace RD_AAOW
 	public partial class HardWorkExecutor:Form
 		{
 		// Переменные
-		private bool allowClose = false;						// Запрет выхода из формы до окончания работы
-		private Bitmap progress, frameGreenGrey, frameBack;		// Объекты-отрисовщики
+		private bool allowClose = false;                        // Запрет выхода из формы до окончания работы
+		private Bitmap progress, frameGreenGrey, frameBack;     // Объекты-отрисовщики
 		private Graphics g, gp;
-		private int currentXOffset = 0,
-			currentPercentage = 0;
-		private object parameters;								// Параметры инициализации потока
+		private int currentXOffset = 0, currentPercentage = 0;
+		private object parameters;                              // Параметры инициализации потока
 
 		/// <summary>
 		/// Длина шкалы прогресса
@@ -65,9 +64,15 @@ namespace RD_AAOW
 			{
 			// Настройка контролов
 			InitializeComponent ();
+#if SIMPLE_HWE
+			this.BackColor = Color.FromKnownColor (KnownColor.Control);
+			StateLabel.ForeColor = AbortButton.ForeColor = Color.FromArgb (0, 0, 0);
+			AbortButton.BackColor = Color.FromKnownColor (KnownColor.Control);
+#else
 			this.BackColor = ProgramDescription.MasterBackColor;
 			StateLabel.ForeColor = AbortButton.ForeColor = ProgramDescription.MasterTextColor;
 			AbortButton.BackColor = ProgramDescription.MasterButtonColor;
+#endif
 
 			// Инициализация
 			progress = new Bitmap (this.Width - 20, 30);
@@ -78,8 +83,8 @@ namespace RD_AAOW
 			Point[] frame = new Point[] {
 					new Point (0, 0),
 					new Point (this.Width / 4, 0),
-					new Point (this.Width / 4 + progress .Height / 2, progress .Height / 2),
-					new Point (this.Width / 4, progress .Height),
+					new Point (this.Width / 4 + progress.Height / 2, progress .Height / 2),
+					new Point (this.Width / 4, progress.Height),
 					new Point (0, progress .Height),
 					new Point (progress .Height / 2, progress .Height / 2)
 					};
@@ -132,23 +137,23 @@ namespace RD_AAOW
 		/// Конструктор. Выполняет настройку и запуск процесса установки/удаления
 		/// </summary>
 		/// <param name="HardWorkProcess">Процесс, выполняющий установку/удаление</param>
-		/// <param name="Mode">Режим установки/удаления файлов</param>
 		/// <param name="SetupPath">Путь установки/удаления</param>
 		/// <param name="Uninstall">Флаг удаления ранее установленных файлов</param>
-		public HardWorkExecutor (DoWorkEventHandler HardWorkProcess, string SetupPath, ArchiveOperator.SetupModes Mode, bool Uninstall)
+		/// <param name="PackagePath">Путь к пакету развёртки</param>
+		public HardWorkExecutor (DoWorkEventHandler HardWorkProcess, string SetupPath, string PackagePath, bool Uninstall)
 			{
 			// Инициализация
 			List<string> argument = new List<string> ();
 			argument.Add (SetupPath);
-			argument.Add (((int)Mode).ToString ());
+			argument.Add (PackagePath);
 			argument.Add (Uninstall.ToString ());
 			parameters = argument;
 
 			// Настройка BackgroundWorker
 			bw.ProgressChanged += ProgressChanged;
 
-			bw.WorkerReportsProgress = true;		// Разрешает возвраты изнутри процесса
-			bw.WorkerSupportsCancellation = true;	// Разрешает завершение процесса
+			bw.WorkerReportsProgress = true;        // Разрешает возвраты изнутри процесса
+			bw.WorkerSupportsCancellation = true;   // Разрешает завершение процесса
 
 			bw.DoWork += ((HardWorkProcess != null) ? HardWorkProcess : DoWork);
 			bw.RunWorkerCompleted += RunWorkerCompleted;
@@ -168,8 +173,8 @@ namespace RD_AAOW
 		public HardWorkExecutor (DoWorkEventHandler HardWorkProcess, string PackageVersion)
 			{
 			// Настройка BackgroundWorker
-			bw.WorkerReportsProgress = true;		// Разрешает возвраты изнутри процесса
-			bw.WorkerSupportsCancellation = true;	// Разрешает завершение процесса
+			bw.WorkerReportsProgress = true;        // Разрешает возвраты изнутри процесса
+			bw.WorkerSupportsCancellation = true;   // Разрешает завершение процесса
 
 			bw.DoWork += ((HardWorkProcess != null) ? HardWorkProcess : DoWork);
 			bw.RunWorkerCompleted += RunWorkerCompleted;
@@ -180,7 +185,37 @@ namespace RD_AAOW
 #endif
 
 		/// <summary>
-		/// Конструктор. Выполняет указанное действие с указанными параметрами в скрытом режиме
+		/// Конструктор. Выполняет загрузку файла по URL
+		/// </summary>
+		/// <param name="HardWorkProcess">Выполняемый процесс</param>
+		/// <param name="Length">Размер пакета</param>
+		/// <param name="TargetPath">Путь создаваемого файла</param>
+		/// <param name="URL">Ссылка для загрузки</param>
+		public HardWorkExecutor (DoWorkEventHandler HardWorkProcess, string URL, string TargetPath, string Length)
+			{
+			// Инициализация
+			string[] arguments = new string[] { URL, TargetPath, Length };
+			parameters = arguments;
+
+			// Настройка BackgroundWorker
+			bw.ProgressChanged += ProgressChanged;
+
+			bw.WorkerReportsProgress = true;        // Разрешает возвраты изнутри процесса
+			bw.WorkerSupportsCancellation = true;   // Разрешает завершение процесса
+
+			bw.DoWork += ((HardWorkProcess != null) ? HardWorkProcess : DoWork);
+			bw.RunWorkerCompleted += RunWorkerCompleted;
+
+			// Инициализация ProgressBar
+			InitializeProgressBar ();
+
+			// Готово. Запуск
+			this.StateLabel.TextAlign = ContentAlignment.MiddleCenter;
+			this.ShowDialog ();
+			}
+
+		/// <summary>
+		/// Конструктор. Выполняет указанное действие с указанными параметрами
 		/// </summary>
 		/// <param name="HardWorkProcess">Выполняемый процесс</param>
 		/// <param name="Parameters">Передаваемые параметры выполнения</param>
@@ -188,8 +223,8 @@ namespace RD_AAOW
 		public HardWorkExecutor (DoWorkEventHandler HardWorkProcess, object Parameters, string Caption)
 			{
 			// Настройка BackgroundWorker
-			bw.WorkerReportsProgress = true;		// Разрешает возвраты изнутри процесса
-			bw.WorkerSupportsCancellation = true;	// Разрешает завершение процесса
+			bw.WorkerReportsProgress = true;        // Разрешает возвраты изнутри процесса
+			bw.WorkerSupportsCancellation = true;   // Разрешает завершение процесса
 
 			bw.DoWork += ((HardWorkProcess != null) ? HardWorkProcess : DoWork);
 			bw.RunWorkerCompleted += RunWorkerCompleted;
@@ -223,8 +258,8 @@ namespace RD_AAOW
 		public HardWorkExecutor (DoWorkEventHandler HardWorkProcess)
 			{
 			// Настройка BackgroundWorker
-			bw.WorkerReportsProgress = true;		// Разрешает возвраты изнутри процесса
-			bw.WorkerSupportsCancellation = true;	// Разрешает завершение процесса
+			bw.WorkerReportsProgress = true;        // Разрешает возвраты изнутри процесса
+			bw.WorkerSupportsCancellation = true;   // Разрешает завершение процесса
 
 			bw.DoWork += ((HardWorkProcess != null) ? HardWorkProcess : DoWork);
 			bw.RunWorkerCompleted += RunWorkerCompleted;
@@ -240,8 +275,12 @@ namespace RD_AAOW
 			}
 
 		// Метод запускает выполнение процесса
-		private void HardWorkExecutor_Shown (object sender, System.EventArgs e)
+		private void HardWorkExecutor_Shown (object sender, EventArgs e)
 			{
+#if !SIMPLE_HWE
+			this.Activate ();
+			this.TopMost = true;
+#endif
 			bw.RunWorkerAsync (parameters);
 			}
 
@@ -249,7 +288,8 @@ namespace RD_AAOW
 		private void ProgressChanged (object sender, ProgressChangedEventArgs e)
 			{
 			// Обновление ProgressBar
-			currentPercentage = e.ProgressPercentage;
+			currentPercentage = ((e.ProgressPercentage > ProgressBarSize) || (e.ProgressPercentage < 0)) ?
+				(int)ProgressBarSize : e.ProgressPercentage;
 
 			StateLabel.Text = (string)e.UserState;
 			}
@@ -262,8 +302,8 @@ namespace RD_AAOW
 				{
 				if (e.Result != null)
 					{
-					executionResult = int.Parse (e.Result.ToString ());
 					result = e.Result.ToString ();
+					executionResult = int.Parse (e.Result.ToString ());
 					}
 				}
 			catch
@@ -278,7 +318,7 @@ namespace RD_AAOW
 			}
 
 		// Кнопка инициирует остановку процесса
-		private void AbortButton_Click (object sender, System.EventArgs e)
+		private void AbortButton_Click (object sender, EventArgs e)
 			{
 			bw.CancelAsync ();
 			}
@@ -290,7 +330,7 @@ namespace RD_AAOW
 			for (int i = 0; i < ProgressBarSize; i++)
 				{
 				System.Threading.Thread.Sleep (500);
-				((BackgroundWorker)sender).ReportProgress (i);	// Возврат прогресса
+				((BackgroundWorker)sender).ReportProgress (i);  // Возврат прогресса
 
 				// Завершение работы, если получено требование от диалога
 				if (((BackgroundWorker)sender).CancellationPending)
@@ -323,12 +363,12 @@ namespace RD_AAOW
 			}
 
 		// Отрисовка прогресс-бара
-		private void DrawingTimer_Tick (object sender, System.EventArgs e)
+		private void DrawingTimer_Tick (object sender, EventArgs e)
 			{
 			// Отрисовка текущей позиции
 			gp.DrawImage (frameGreenGrey, currentXOffset, 0);
 			gp.DrawImage (frameBack, -9 * this.Width / 4, 0);
-			gp.DrawImage (frameBack, currentPercentage * (progress.Width - progress.Height / 2) / ProgressBarSize -
+			gp.DrawImage (frameBack, currentPercentage * (progress.Width - progress.Height) / ProgressBarSize -
 				this.Width / 4, 0);
 
 			g.DrawImage (progress, 10, StateLabel.Top + StateLabel.Height + 10);

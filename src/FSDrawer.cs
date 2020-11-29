@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.IO;
@@ -12,37 +13,37 @@ namespace RD_AAOW
 	/// <summary>
 	/// Класс обеспечивает отображение визуализации текста
 	/// </summary>
-	public partial class FSDrawer:Form
+	public partial class FSDrawer: Form
 		{
 		// Переменные и константы
 		// Главные
-		private Phases currentPhase = Phases.LayersPrecache;	// Текущая фаза отрисовки
-		private Random rnd = new Random ();						// ГПСЧ
-		private uint steps = 0;									// Счётчик шагов отрисовки
-		private float scale = 1.0f;								// Главный масштаб
-		private const uint generalStep = 3;						// Длительность главного шага отображения
-		private string commandLine;								// Параметры командной строки
-		private ParametersPicker pp;							// Форма запроса параметров работы отрисовщика
+		private Phases currentPhase = Phases.LayersPrecache;    // Текущая фаза отрисовки
+		private Random rnd = new Random ();                     // ГПСЧ
+		private uint steps = 0;                                 // Счётчик шагов отрисовки
+		private float scale = 1.0f;                             // Главный масштаб
+		private const uint generalStep = 3;                     // Длительность главного шага отображения
+		private string commandLine;                             // Параметры командной строки
+		private ParametersPicker pp;                            // Форма запроса параметров работы отрисовщика
 
 		// Текст
-		private List<List<LogoDrawerString>> mainStringsSet = new List<List<LogoDrawerString>> ();		// Основной текст
-		private List<List<LogoDrawerString>> signatureStringsSet = new List<List<LogoDrawerString>> ();	// Подпись
+		private List<List<LogoDrawerString>> mainStringsSet = new List<List<LogoDrawerString>> ();      // Основной текст
+		private List<List<LogoDrawerString>> signatureStringsSet = new List<List<LogoDrawerString>> (); // Подпись
 
-		private char[] splitters = new char[] { ' ', '\t' };	// Спиттеры для текста
-		private char signatureMarker = '^',						// Маркеры фрагментов текста
+		private char[] splitters = new char[] { ' ', '\t' };    // Спиттеры для текста
+		private char signatureMarker = '^',                     // Маркеры фрагментов текста
 			textMarker = '#',
 			colorMarker = '&';
-		private Point drawPoint;								// Текущая позиция отрисовки текста
-		private int lineFeed,									// Высота строки текста расширенного режима
-			lineLeft,											// Начало и конец строки текста расширенного режима
+		private Point drawPoint;                                // Текущая позиция отрисовки текста
+		private int lineFeed,                                   // Высота строки текста расширенного режима
+			lineLeft,                                           // Начало и конец строки текста расширенного режима
 			lineRight,
-			lineTop;											// Начало блока текста расширенного режима
+			lineTop;                                            // Начало блока текста расширенного режима
 
 		// Графика
-		private List<LogoDrawerLayer> layers = new List<LogoDrawerLayer> ();		// Базовые слои изображения
+		private List<LogoDrawerLayer> layers = new List<LogoDrawerLayer> ();        // Базовые слои изображения
 		private uint savingLayersCounter = 0;
 
-		private Graphics gr;									// Объекты-отрисовщики
+		private Graphics gr;                                    // Объекты-отрисовщики
 		private SolidBrush logoForeBrush, logoBackBrush,
 			plotGradient1Brush, textBrush;
 		private List<SolidBrush> plotBackBrushes = new List<SolidBrush> ();
@@ -52,20 +53,20 @@ namespace RD_AAOW
 		private Pen logoBackPen;
 		private Color currentColor;
 
-		private ColorMatrix fadeMatrix;							// Матрица затенения текста
-		private ImageAttributes fadeAttributes;					// Дескриптор параметров затенения
+		private ColorMatrix fadeMatrix;                         // Матрица затенения текста
+		private ImageAttributes fadeAttributes;                 // Дескриптор параметров затенения
 
-		private List<Bitmap> logo = new List<Bitmap> ();		// Фрагменты основного лого
+		private List<Bitmap> logo = new List<Bitmap> ();        // Фрагменты основного лого
 
-		private List<ILogoDrawerObject> objects = new List<ILogoDrawerObject> ();	// Визуальные объекты
-		private LogoDrawerObjectMetrics objectsMetrics;			// Метрики генерируемых объектов
+		private List<ILogoDrawerObject> objects = new List<ILogoDrawerObject> ();   // Визуальные объекты
+		private LogoDrawerObjectMetrics objectsMetrics;         // Метрики генерируемых объектов
 
 		// Звук
-		private AudioManager am = new AudioManager ();			// Эмбиент
-		private uint soundStartFrame, soundEndFrame;			// Расчётные фреймы начала и остановки звука
+		private AudioManager am = new AudioManager ();          // Эмбиент
+		private uint soundStartFrame, soundEndFrame;            // Расчётные фреймы начала и остановки звука
 
 		// Видео
-		private VideoManager vm = new VideoManager ();			// Видеофайл (балластная инициализация)
+		private VideoManager vm = new VideoManager ();          // Видеофайл (балластная инициализация)
 
 		// Возможные фазы отрисовки
 		private enum Phases
@@ -150,7 +151,7 @@ namespace RD_AAOW
 
 			string cfgExtension = ".fss" + ProgramDescription.AssemblyVersion.Replace (".", "").Substring (0, 2);
 			OFConfig.Filter = SFConfig.Filter = "FullSilence shows (*" + cfgExtension + ")|*" + cfgExtension;
-			OFConfig.InitialDirectory = SFConfig.InitialDirectory = Application.StartupPath;
+			//OFConfig.InitialDirectory = SFConfig.InitialDirectory = Application.StartupPath;
 			OFConfig.FileName = SFConfig.FileName = commandLine;
 
 			SFVideo.Title = "Select placement of new video";
@@ -167,11 +168,11 @@ namespace RD_AAOW
 				}
 			SFVideo.FileName = Path.GetFileNameWithoutExtension (OFConfig.FileName) + ".avi";
 
-			pp = new ParametersPicker (true);	// Запрос параметров отрисовки
+			pp = new ParametersPicker (true);   // Запрос параметров отрисовки
 			pp.ShowDialog ();
 
 			// Подготовка к записи в видеопоток
-			layers.Add (new LogoDrawerLayer (0, 0, (uint)this.Width, (uint)this.Height));	// Главный слой
+			layers.Add (new LogoDrawerLayer (0, 0, (uint)this.Width, (uint)this.Height));   // Главный слой
 
 			if (pp.WriteFramesToAVI && (SFVideo.ShowDialog () == DialogResult.OK))
 				{
@@ -229,11 +230,11 @@ namespace RD_AAOW
 			lineFeed = (int)(50 * scale);
 			lineTop = this.Height / 24;
 
-			float[][] fadeMatrixItems = { 
+			float[][] fadeMatrixItems = {
 				new float[] {1, 0, 0, 0, 0},
 				new float[] {0, 1, 0, 0, 0},
 				new float[] {0, 0, 1, 0, 0},
-				new float[] {0, 0, 0, 0.8f, 0}, 
+				new float[] {0, 0, 0, 0.8f, 0},
 				new float[] {0, 0, 0, 0, 1}};
 			fadeMatrix = new ColorMatrix (fadeMatrixItems);
 			fadeAttributes = new ImageAttributes ();
@@ -300,7 +301,8 @@ namespace RD_AAOW
 				StartupSideCombo.SelectedIndex = (int)objectsMetrics.StartupPosition;
 
 			KeepTracks.Checked = objectsMetrics.KeepTracks;
-			Acceleration.Checked = objectsMetrics.Acceleration;
+			AccelerationField.Maximum = LogoDrawerSupport.MaxAcceleration;
+			AccelerationField.Value = objectsMetrics.Acceleration;
 
 			EnlargingCoeff.Minimum = -LogoDrawerSupport.MaxEnlarge;
 			EnlargingCoeff.Maximum = LogoDrawerSupport.MaxEnlarge;
@@ -351,9 +353,6 @@ namespace RD_AAOW
 		// Метод формирует цвет, достоверно отличающийся от указанного
 		private Color GetNearbyColor (Color OldColor)
 			{
-			/*int r = (OldColor.R > 127) ? (OldColor.R - 128) : (OldColor.R + 128),
-				g = (OldColor.G > 127) ? (OldColor.G - 128) : (OldColor.G + 128),
-				b = (OldColor.B > 127) ? (OldColor.B - 128) : (OldColor.B + 128);*/
 			return (OldColor.R + OldColor.G + OldColor.B > 128 * 3) ? Color.FromArgb (0, 0, 0) : Color.FromArgb (255, 255, 255);
 			}
 
@@ -518,12 +517,12 @@ namespace RD_AAOW
 
 			if (steps++ >= 80)
 				{
-				drawPoint.X = lineLeft;		// Установка начальной позиции текста
+				drawPoint.X = lineLeft;     // Установка начальной позиции текста
 				drawPoint.Y = lineTop;
 
 				layers.Add (new LogoDrawerLayer (0, (uint)((1 - LogoDrawerSupport.TextFieldPart) * this.Height *
 					(centerizeText ? 0.5 : 1.0)),
-					(uint)this.Width, (uint)(LogoDrawerSupport.TextFieldPart * this.Height)));		// Слой текста
+					(uint)this.Width, (uint)(LogoDrawerSupport.TextFieldPart * this.Height)));      // Слой текста
 
 				steps = 0;
 				currentPhase++;
@@ -548,7 +547,7 @@ namespace RD_AAOW
 					{
 					layers.Add (new LogoDrawerLayer (0, (uint)((1 - LogoDrawerSupport.TextFieldPart) * this.Height *
 						(centerizeText ? 0.5 : 1.0)),
-						(uint)this.Width, (uint)(LogoDrawerSupport.TextFieldPart * this.Height)));			// Слой градиента
+						(uint)this.Width, (uint)(LogoDrawerSupport.TextFieldPart * this.Height)));          // Слой градиента
 					}
 				if (currentPhase == Phases.EndingFading2)
 					{
@@ -567,9 +566,9 @@ namespace RD_AAOW
 			ExtendedTimer.Interval = (int)generalStep;
 
 			// Настройка слоёв
-			layers.RemoveAt (1);	// Слой лого больше не нужен
-			layers.Add (new LogoDrawerLayer (0, 0, (uint)this.Width, (uint)this.Height));		// Слой фона
-			layers.Add (new LogoDrawerLayer (0, 0, (uint)this.Width, (uint)this.Height));		// Слой сфер
+			layers.RemoveAt (1);    // Слой лого больше не нужен
+			layers.Add (new LogoDrawerLayer (0, 0, (uint)this.Width, (uint)this.Height));       // Слой фона
+			layers.Add (new LogoDrawerLayer (0, 0, (uint)this.Width, (uint)this.Height));       // Слой сфер
 
 			// Генерация визуальных объектов
 			for (int i = 0; i < objectsMetrics.ObjectsCount; i++)
@@ -578,46 +577,54 @@ namespace RD_AAOW
 					{
 					default:
 					case LogoDrawerObjectTypes.Spheres:
-						objects.Add (new LogoDrawerSphere ((uint)this.Width, (uint)this.Height, rnd, objectsMetrics));
+						objects.Add (new LogoDrawerSphere ((uint)this.Width, (uint)this.Height,
+							(uint)this.Width / 2, (uint)this.Height / 2, rnd, objectsMetrics));
 						break;
 
 					case LogoDrawerObjectTypes.RotatingPolygons:
 						objectsMetrics.AsStars = false;
 						objectsMetrics.Rotation = true;
-						objects.Add (new LogoDrawerSquare ((uint)this.Width, (uint)this.Height, rnd, objectsMetrics));
+						objects.Add (new LogoDrawerSquare ((uint)this.Width, (uint)this.Height,
+							(uint)this.Width / 2, (uint)this.Height / 2, rnd, objectsMetrics));
 						break;
 
 					case LogoDrawerObjectTypes.RotatingStars:
 						objectsMetrics.AsStars = true;
 						objectsMetrics.Rotation = true;
-						objects.Add (new LogoDrawerSquare ((uint)this.Width, (uint)this.Height, rnd, objectsMetrics));
+						objects.Add (new LogoDrawerSquare ((uint)this.Width, (uint)this.Height,
+							(uint)this.Width / 2, (uint)this.Height / 2, rnd, objectsMetrics));
 						break;
 
 					case LogoDrawerObjectTypes.RotatingLetters:
 						objectsMetrics.Rotation = true;
-						objects.Add (new LogoDrawerLetter ((uint)this.Width, (uint)this.Height, rnd, objectsMetrics));
+						objects.Add (new LogoDrawerLetter ((uint)this.Width, (uint)this.Height,
+							(uint)this.Width / 2, (uint)this.Height / 2, rnd, objectsMetrics));
 						break;
 
 					case LogoDrawerObjectTypes.Letters:
 						objectsMetrics.Rotation = false;
-						objects.Add (new LogoDrawerLetter ((uint)this.Width, (uint)this.Height, rnd, objectsMetrics));
+						objects.Add (new LogoDrawerLetter ((uint)this.Width, (uint)this.Height,
+							(uint)this.Width / 2, (uint)this.Height / 2, rnd, objectsMetrics));
 						break;
 
 					case LogoDrawerObjectTypes.Polygons:
 						objectsMetrics.AsStars = false;
 						objectsMetrics.Rotation = false;
-						objects.Add (new LogoDrawerSquare ((uint)this.Width, (uint)this.Height, rnd, objectsMetrics));
+						objects.Add (new LogoDrawerSquare ((uint)this.Width, (uint)this.Height,
+							(uint)this.Width / 2, (uint)this.Height / 2, rnd, objectsMetrics));
 						break;
 
 					case LogoDrawerObjectTypes.Stars:
 						objectsMetrics.AsStars = true;
 						objectsMetrics.Rotation = false;
-						objects.Add (new LogoDrawerSquare ((uint)this.Width, (uint)this.Height, rnd, objectsMetrics));
+						objects.Add (new LogoDrawerSquare ((uint)this.Width, (uint)this.Height,
+							(uint)this.Width / 2, (uint)this.Height / 2, rnd, objectsMetrics));
 						break;
 
 					case LogoDrawerObjectTypes.RotatingPictures:
 						objectsMetrics.Rotation = true;
 						objects.Add (new LogoDrawerPicture ((uint)this.Width, (uint)this.Height,
+							(uint)this.Width / 2, (uint)this.Height / 2,
 							rnd, objectsMetrics, Path.GetDirectoryName (OFConfig.FileName) + "\\" +
 							Path.GetFileNameWithoutExtension (OFConfig.FileName)));
 						break;
@@ -625,6 +632,7 @@ namespace RD_AAOW
 					case LogoDrawerObjectTypes.Pictures:
 						objectsMetrics.Rotation = false;
 						objects.Add (new LogoDrawerPicture ((uint)this.Width, (uint)this.Height,
+							(uint)this.Width / 2, (uint)this.Height / 2,
 							rnd, objectsMetrics, Path.GetDirectoryName (OFConfig.FileName) + "\\" +
 							Path.GetFileNameWithoutExtension (OFConfig.FileName)));
 						break;
@@ -812,10 +820,10 @@ namespace RD_AAOW
 
 			///////////////////
 			// Подготовка слоёв
-			layers.Add (new LogoDrawerLayer (0, 0, (uint)this.Width, (uint)this.Height));	// Слой лого
+			layers.Add (new LogoDrawerLayer (0, 0, (uint)this.Width, (uint)this.Height));   // Слой лого
 
 			// Начало записи
-			this.BackColor = logoBackBrush.Color;	// Заливка фона
+			this.BackColor = logoBackBrush.Color;   // Заливка фона
 			layers[0].Descriptor.FillRectangle (logoBackBrush, 0, 0, this.Width, this.Height);
 
 			// Первичная отрисовка
@@ -838,7 +846,7 @@ namespace RD_AAOW
 			// Отрисовка объектов со смещением
 			for (int i = 0; i < objects.Count; i++)
 				{
-				objects[i].Move (objectsMetrics.Acceleration && (rnd.Next (3) == 0), objectsMetrics.Enlarging);
+				objects[i].Move (objectsMetrics.Acceleration, objectsMetrics.Enlarging);
 				if (!objects[i].IsInited)
 					{
 					objects[i].Dispose ();
@@ -846,24 +854,28 @@ namespace RD_AAOW
 						{
 						default:
 						case LogoDrawerObjectTypes.Spheres:
-							objects[i] = new LogoDrawerSphere ((uint)this.Width, (uint)this.Height, rnd, objectsMetrics);
+							objects[i] = new LogoDrawerSphere ((uint)this.Width, (uint)this.Height,
+								(uint)this.Width / 2, (uint)this.Height / 2, rnd, objectsMetrics);
 							break;
 
 						case LogoDrawerObjectTypes.Polygons:
 						case LogoDrawerObjectTypes.Stars:
 						case LogoDrawerObjectTypes.RotatingPolygons:
 						case LogoDrawerObjectTypes.RotatingStars:
-							objects[i] = new LogoDrawerSquare ((uint)this.Width, (uint)this.Height, rnd, objectsMetrics);
+							objects[i] = new LogoDrawerSquare ((uint)this.Width, (uint)this.Height,
+								(uint)this.Width / 2, (uint)this.Height / 2, rnd, objectsMetrics);
 							break;
 
 						case LogoDrawerObjectTypes.Letters:
 						case LogoDrawerObjectTypes.RotatingLetters:
-							objects[i] = new LogoDrawerLetter ((uint)this.Width, (uint)this.Height, rnd, objectsMetrics);
+							objects[i] = new LogoDrawerLetter ((uint)this.Width, (uint)this.Height,
+								(uint)this.Width / 2, (uint)this.Height / 2, rnd, objectsMetrics);
 							break;
 
 						case LogoDrawerObjectTypes.Pictures:
 						case LogoDrawerObjectTypes.RotatingPictures:
 							objects[i] = new LogoDrawerPicture ((uint)this.Width, (uint)this.Height,
+								(uint)this.Width / 2, (uint)this.Height / 2,
 								rnd, objectsMetrics, Path.GetDirectoryName (OFConfig.FileName) + "\\" +
 								Path.GetFileNameWithoutExtension (OFConfig.FileName));
 							break;
@@ -889,6 +901,7 @@ namespace RD_AAOW
 				{
 				Bitmap b = (Bitmap)layers[0].Layer.Clone ();
 				vm.AddFrame (b);
+				//b.Save ("C:\\1\\" + savingLayersCounter.ToString ("D8") + ".png", ImageFormat.Png);
 				b.Dispose ();
 				savingLayersCounter++;
 
@@ -1066,12 +1079,12 @@ namespace RD_AAOW
 			StreamReader SR = new StreamReader (FS, Encoding.GetEncoding (1251));
 
 			// Чтение настроек
-			string[] backColor = SR.ReadLine ().Split (splitters, StringSplitOptions.RemoveEmptyEntries);	// Цвет фона лого
-			string[] foreColor = SR.ReadLine ().Split (splitters, StringSplitOptions.RemoveEmptyEntries);	// Цвет текста лого
-			string[] plotColor1 = SR.ReadLine ().Split (splitters, StringSplitOptions.RemoveEmptyEntries);	// Цвет изображения 1
-			string[] plotColor2 = SR.ReadLine ().Split (splitters, StringSplitOptions.RemoveEmptyEntries);	// Цвет изображения 2
-			string[] textColor = SR.ReadLine ().Split (splitters, StringSplitOptions.RemoveEmptyEntries);	// Цвет текста
-			string[] fontSizes = SR.ReadLine ().Split (splitters, StringSplitOptions.RemoveEmptyEntries);	// Размеры шрифтов
+			string[] backColor = SR.ReadLine ().Split (splitters, StringSplitOptions.RemoveEmptyEntries);   // Цвет фона лого
+			string[] foreColor = SR.ReadLine ().Split (splitters, StringSplitOptions.RemoveEmptyEntries);   // Цвет текста лого
+			string[] plotColor1 = SR.ReadLine ().Split (splitters, StringSplitOptions.RemoveEmptyEntries);  // Цвет изображения 1
+			string[] plotColor2 = SR.ReadLine ().Split (splitters, StringSplitOptions.RemoveEmptyEntries);  // Цвет изображения 2
+			string[] textColor = SR.ReadLine ().Split (splitters, StringSplitOptions.RemoveEmptyEntries);   // Цвет текста
+			string[] fontSizes = SR.ReadLine ().Split (splitters, StringSplitOptions.RemoveEmptyEntries);   // Размеры шрифтов
 
 			err = -100;
 			try
@@ -1081,13 +1094,13 @@ namespace RD_AAOW
 				err--;
 				logoForeBrush = new SolidBrush (Color.FromArgb (255, byte.Parse (foreColor[0]),
 					byte.Parse (foreColor[1]), byte.Parse (foreColor[2])));
-				err--;	// -102
+				err--;  // -102
 				plotBackBrushes.Add (new SolidBrush (Color.FromArgb (20, byte.Parse (plotColor1[0]),
 					byte.Parse (plotColor1[1]), byte.Parse (plotColor1[2]))));
 				err--;
 				plotGradient1Brush = new SolidBrush (Color.FromArgb (20, byte.Parse (plotColor2[0]),
 					byte.Parse (plotColor2[1]), byte.Parse (plotColor2[2])));
-				err--;	// -104
+				err--;  // -104
 				textBrush = new SolidBrush (Color.FromArgb (255, byte.Parse (textColor[0]),
 					byte.Parse (textColor[1]), byte.Parse (textColor[2])));
 				err--;
@@ -1097,7 +1110,7 @@ namespace RD_AAOW
 					textFontSize = LogoDrawerSupport.MinFontSize;
 				if (textFontSize > LogoDrawerSupport.MaxFontSize)
 					textFontSize = LogoDrawerSupport.MaxFontSize;
-				err--;	// -106
+				err--;  // -106
 
 				signatureFontSize = uint.Parse (fontSizes[1]);
 				if (signatureFontSize < LogoDrawerSupport.MinFontSize)
@@ -1107,7 +1120,7 @@ namespace RD_AAOW
 				err--;
 
 				centerizeText = (uint.Parse (fontSizes[2]) != 0);
-				err--;	// -108
+				err--;  // -108
 				}
 			catch
 				{
@@ -1127,39 +1140,39 @@ namespace RD_AAOW
 				objectsMetrics.ObjectsType = (LogoDrawerObjectTypes)byte.Parse (metrics1[0]);
 				err--;
 				objectsMetrics.ObjectsCount = byte.Parse (metrics1[1]);
-				err--;	// -110
+				err--;  // -110
 				objectsMetrics.PolygonsSidesCount = byte.Parse (metrics1[2]);
 				err--;
 				objectsMetrics.StartupPosition = (LogoDrawerObjectStartupPositions)uint.Parse (metrics1[3]);
-				err--;	// -112
+				err--;  // -112
 				objectsMetrics.KeepTracks = (uint.Parse (metrics1[4]) != 0);
 				err--;
-				objectsMetrics.Acceleration = (uint.Parse (metrics1[5]) != 0);
-				err--;	// -114
+				objectsMetrics.Acceleration = uint.Parse (metrics1[5]);
+				err--;  // -114
 				objectsMetrics.Enlarging = int.Parse (metrics1[6]);
 				err--;
 				objectsMetrics.MinSpeed = uint.Parse (metrics2[0]);
-				err--;	// -116
+				err--;  // -116
 				objectsMetrics.MaxSpeed = uint.Parse (metrics2[1]);
 				err--;
 				objectsMetrics.MaxSpeedFluctuation = uint.Parse (metrics2[2]);
-				err--;	// -118
+				err--;  // -118
 				objectsMetrics.MinSize = uint.Parse (metrics3[0]);
 				err--;
 				objectsMetrics.MaxSize = uint.Parse (metrics3[1]);
-				err--;	// -120
+				err--;  // -120
 				objectsMetrics.MinRed = byte.Parse (metrics4[0]);
 				err--;
 				objectsMetrics.MaxRed = byte.Parse (metrics4[1]);
-				err--;	// -122
+				err--;  // -122
 				objectsMetrics.MinGreen = byte.Parse (metrics5[0]);
 				err--;
 				objectsMetrics.MaxGreen = byte.Parse (metrics5[1]);
-				err--;	// -124
+				err--;  // -124
 				objectsMetrics.MinBlue = byte.Parse (metrics6[0]);
 				err--;
 				objectsMetrics.MaxBlue = byte.Parse (metrics6[1]);
-				err--;	// -126
+				err--;  // -126
 				}
 			catch
 				{
@@ -1299,7 +1312,7 @@ namespace RD_AAOW
 			SFConfig.ShowDialog ();
 			}
 
-		private void SFConfig_FileOk (object sender, System.ComponentModel.CancelEventArgs e)
+		private void SFConfig_FileOk (object sender, CancelEventArgs e)
 			{
 			// Создание файла
 			FileStream FS = null;
@@ -1332,7 +1345,7 @@ namespace RD_AAOW
 
 			SW.Write (ObjectsTypeCombo.SelectedIndex.ToString () + " " + ObjectsCountField.Value.ToString () + " " +
 				SidesCountField.Value.ToString () + " " + StartupSideCombo.SelectedIndex.ToString () + " " +
-				(KeepTracks.Checked ? "1" : "0") + " " + (Acceleration.Checked ? "1" : "0") + " " +
+				(KeepTracks.Checked ? "1" : "0") + " " + AccelerationField.Value.ToString () + " " +
 				EnlargingCoeff.Value.ToString () + "\n");
 
 			SW.Write (MinSpeedField.Value.ToString () + " " + MaxSpeedField.Value.ToString () + " " +

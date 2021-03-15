@@ -151,7 +151,6 @@ namespace RD_AAOW
 
 			string cfgExtension = ".fss" + ProgramDescription.AssemblyVersion.Replace (".", "").Substring (0, 2);
 			OFConfig.Filter = SFConfig.Filter = "FullSilence shows (*" + cfgExtension + ")|*" + cfgExtension;
-			//OFConfig.InitialDirectory = SFConfig.InitialDirectory = Application.StartupPath;
 			OFConfig.FileName = SFConfig.FileName = commandLine;
 
 			SFVideo.Title = "Select placement of new video";

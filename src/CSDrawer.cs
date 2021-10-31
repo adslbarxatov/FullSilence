@@ -19,8 +19,8 @@ namespace RD_AAOW
 		// Переменные и константы
 		// Главные
 		private Phases currentPhase = Phases.LayersPrecache;    // Текущая фаза отрисовки
-		private uint steps = 0;                                 // Счётчик шагов отрисовки
-		private const double fps = 30.0;                        // Частота кадров видео 
+		private uint steps2 = 0;                                // Счётчик шагов отрисовки
+		private const double fps = 60.0;                        // Частота кадров видео 
 		private string commandLine;                             // Параметры командной строки
 		private bool debugMode = false;                         // Режим отладки скрипта
 		private const uint frameTypesCount = 7;                 // Количество доступных типов субокон
@@ -31,7 +31,7 @@ namespace RD_AAOW
 		private const int lineLeft = 20,                        // Начало и конец строки текста расширенного режима
 			lineRight = 20,
 			lineTop = 20;                                       // Начало блока текста расширенного режима
-		private bool highlight = false;                         // Флаг выделения текста
+		private uint highlight = 0;                             // Тип выделения текста
 
 		// Графика
 		private List<LogoDrawerLayer> layers = new List<LogoDrawerLayer> ();        // Базовые слои изображения
@@ -50,7 +50,7 @@ namespace RD_AAOW
 
 		// Видео
 		private VideoManager vm = new VideoManager ();          // Видеофайл (балластная инициализация)
-		private SpeechSynthesizer synthesizer;                  // TextToSpeech
+		private SpeechSynthesizer synth_ru, synth_en;           // TextToSpeech
 		private SpeechAudioFormatInfo safi;                     // Формат записи
 
 		// Возможные фазы отрисовки
@@ -133,8 +133,13 @@ namespace RD_AAOW
 			brushes.Add (new List<SolidBrush> ());      // Общие кисти
 			brushes[0].Add (new SolidBrush (Color.FromArgb (0, 0, 0)));
 			brushes[0].Add (new SolidBrush (Color.FromArgb (30, brushes[0][0].Color)));
-			brushes[0].Add (new SolidBrush (Color.FromArgb (128, 0, 255)));
 			brushes[0].Add (new SolidBrush (Color.FromArgb (0, 255, 128)));
+
+			brushes[0].Add (new SolidBrush (Color.FromArgb (192, 32, 255)));     // Выделение
+			brushes[0].Add (new SolidBrush (Color.FromArgb (0, 160, 0)));
+			brushes[0].Add (new SolidBrush (Color.FromArgb (255, 0, 0)));
+			brushes[0].Add (new SolidBrush (Color.FromArgb (0, 0, 255)));
+			brushes[0].Add (new SolidBrush (Color.FromArgb (255, 128, 0)));
 
 			brushes.Add (new List<SolidBrush> ());      // Кисти комментариев
 			brushes[1].Add (new SolidBrush (Color.FromArgb (96, 96, 96)));      // Текст
@@ -145,7 +150,7 @@ namespace RD_AAOW
 			brushes.Add (new List<SolidBrush> ());      // Кисти кода
 			brushes[2].Add (new SolidBrush (Color.FromArgb (0, 128, 255)));
 			brushes[2].Add (new SolidBrush (Color.FromArgb (255, 255, 255)));
-			brushes[2].Add (new SolidBrush (Color.FromArgb (0, 128, 255)));
+			brushes[2].Add (new SolidBrush (Color.FromArgb (32, 192, 255)));
 			brushes[2].Add (new SolidBrush (Color.FromArgb (255, 255, 255)));
 
 			brushes.Add (new List<SolidBrush> ());      // Кисти консоли
@@ -210,11 +215,18 @@ namespace RD_AAOW
 			// Инициализация TTS
 			if (vm.IsCreated && writeVoiceActing)
 				{
-				synthesizer = new SpeechSynthesizer ();
-				synthesizer.SelectVoiceByHints (VoiceGender.Male, VoiceAge.Adult, (int)VoiceAge.Adult,
-					CultureInfo.CurrentCulture);
-				synthesizer.Volume = 80;    // (0 - 100)
-				synthesizer.Rate = 2;       // (-10 - +10)
+				synth_en = new SpeechSynthesizer ();
+				synth_en.SelectVoiceByHints (VoiceGender.Male, VoiceAge.Adult, (int)VoiceAge.Adult,
+					CultureInfo.GetCultureInfo ("en-us"));
+
+				synth_ru = new SpeechSynthesizer ();
+				synth_ru.SelectVoiceByHints (VoiceGender.Male, VoiceAge.Adult, (int)VoiceAge.Adult,
+					CultureInfo.GetCultureInfo ("ru-ru"));
+
+				synth_en.Volume = 80;   // (0 - 100)
+				synth_ru.Volume = 80;
+				synth_en.Rate = 0;      // (-10 - +10)
+				synth_ru.Rate = 2;
 
 				safi = new SpeechAudioFormatInfo (44100, AudioBitsPerSample.Sixteen, AudioChannel.Stereo);
 				}
@@ -247,9 +259,9 @@ namespace RD_AAOW
 
 				// Пауза
 				case Phases.LogoIntermission:
-					if (debugMode || (steps++ > 60))
+					if (debugMode || (steps2++ > 2 * fps))
 						{
-						steps = 0;
+						steps2 = 0;
 						currentPhase++;
 						}
 					break;
@@ -286,8 +298,16 @@ namespace RD_AAOW
 									((savingLayersCounter / (uint)fps) % 60).ToString ("D2") + "-" +
 									(1000 * (savingLayersCounter % (uint)fps) / (uint)fps).ToString ("D3") + ".wav";
 
-								synthesizer.SetOutputToWaveFile (audioName, safi);
-								synthesizer.Speak (mainStringsSet[0][0].StringText);
+								if ((short)(mainStringsSet[0][0].StringText[0]) < 128)
+									{
+									synth_en.SetOutputToWaveFile (audioName, safi);
+									synth_en.Speak (mainStringsSet[0][0].StringText);
+									}
+								else
+									{
+									synth_ru.SetOutputToWaveFile (audioName, safi);
+									synth_ru.Speak (mainStringsSet[0][0].StringText);
+									}
 								}
 
 							mainStringsSet[0].RemoveAt (0);
@@ -298,14 +318,14 @@ namespace RD_AAOW
 					if (currentPhase == Phases.MainTextDrawing)
 						{
 						DrawText (layers[(int)(currentFrame - 1) % 3 + 1].Descriptor, mainStringsSet);
-						if (currentPhase == Phases.MainTextDrawing)
-							DrawText (layers[(int)(currentFrame - 1) % 3 + 1].Descriptor, mainStringsSet);
+						/*if (currentPhase == Phases.MainTextDrawing)
+							DrawText (layers[(int)(currentFrame - 1) % 3 + 1].Descriptor, mainStringsSet);*/
 						}
 
 					// Сброс текста
 					else
 						{
-						steps = 0;
+						steps2 = 0;
 						FlushText (currentFrame);
 						}
 					break;
@@ -327,20 +347,20 @@ namespace RD_AAOW
 
 				// Конечный экран
 				case Phases.EndCredits:
-					if (steps == 15)
+					if (steps2 == (uint)(fps / 2))
 						{
-						SizeF sz = layers[0].Descriptor.MeasureString ("FUPL", fonts[1]);
-						layers[0].Descriptor.DrawString ("FUPL", fonts[1], brushes[0][3], this.Width / 2 - 5 * sz.Width / 4,
-							this.Height / 2);
-						layers[0].Descriptor.DrawString (DateTime.Now.Year.ToString (), fonts[1], brushes[0][3],
-							this.Width / 2 + 3 * sz.Width / 8, this.Height / 2);
-						layers[0].Descriptor.DrawString ("f", new Font (fonts[1], FontStyle.Italic), brushes[0][3],
-							this.Width / 2 - sz.Width / 8, this.Height / 2);
+						SizeF sz = layers[0].Descriptor.MeasureString ("FDL", fonts[1]);
+						layers[0].Descriptor.DrawString ("FDL", fonts[1], brushes[0][2],
+							this.Width / 2 - 13 * sz.Width / 8, this.Height / 2 - sz.Height / 2);
+						layers[0].Descriptor.DrawString ("f", new Font (fonts[1], FontStyle.Italic), brushes[0][2],
+							this.Width / 2 - 3 * sz.Width / 8, this.Height / 2 - sz.Height / 2);
+						layers[0].Descriptor.DrawString (DateTime.Now.Year.ToString (), fonts[1], brushes[0][2],
+							this.Width / 2 + 3 * sz.Width / 8, this.Height / 2 - sz.Height / 2);
 						}
 
-					if (steps++ > 120)
+					if (steps2++ > 4 * fps)
 						{
-						steps = 0;
+						steps2 = 0;
 						currentPhase++;
 						}
 					break;
@@ -366,9 +386,9 @@ namespace RD_AAOW
 			layers[layers.Count - 1].Descriptor.FillRectangle (brushes[0][1], 0, 0, this.Width, this.Height);
 
 			// Триггер
-			if (steps++ >= 30)
+			if (steps2++ >= fps)
 				{
-				steps = 0;
+				steps2 = 0;
 				currentPhase++;
 				}
 			}
@@ -398,13 +418,13 @@ namespace RD_AAOW
 		// Отрисовка фрагментов лого
 		private void DrawingLogoFragments ()
 			{
-			steps += 6;
+			steps2 += 6;
 
 			layers[1].Descriptor.DrawImage (RD_AAOW.Properties.CSResources.FUPL,
 				(this.Width - RD_AAOW.Properties.CSResources.FUPL.Width) / 2,
 				(this.Height - RD_AAOW.Properties.CSResources.FUPL.Height) / 2);
 
-			if (steps >= 53)
+			if (steps2 > fps)
 				{
 				// Версия
 
@@ -416,7 +436,7 @@ namespace RD_AAOW
 					layers[1].Layer.Width - sz.Width - sz.Height, layers[1].Layer.Height - 2 * sz.Height);
 
 				// Переход далее
-				steps = 0;
+				steps2 = 0;
 				currentPhase++;
 				}
 
@@ -438,10 +458,10 @@ namespace RD_AAOW
 
 		private void PrepareMainScene ()
 			{
-			steps++;
+			steps2++;
 
 			// Окно комментариев
-			if (steps == 15)
+			if ((steps2 == (uint)(fps / 2)) || debugMode)
 				{
 				// Удаление слоя лого
 				layers.RemoveAt (1);
@@ -463,7 +483,7 @@ namespace RD_AAOW
 				}
 
 			// Окно кода
-			if (steps == 30)
+			if ((steps2 == 3 * (uint)fps / 3) || debugMode)
 				{
 				layers.Add (new LogoDrawerLayer (0, (uint)(this.Height * (commentFramePart + titlesFramePart)),
 					(uint)this.Width / (showOutput ? 2u : 1u),
@@ -483,7 +503,7 @@ namespace RD_AAOW
 				}
 
 			// Окно вывода или ответов
-			if (steps == 40)
+			if ((steps2 == 4 * (uint)fps / 3) || debugMode)
 				{
 				layers.Add (new LogoDrawerLayer ((uint)this.Width / 2, (uint)(this.Height * (commentFramePart + titlesFramePart)),
 					(uint)this.Width / 2, (uint)(this.Height * (1.0 - commentFramePart - titlesFramePart)) + 1));   // Слой вывода
@@ -506,7 +526,7 @@ namespace RD_AAOW
 					}
 				}
 
-			if (steps == 50)
+			if ((steps2 == 5 * (uint)fps / 3) || debugMode)
 				{
 				layers.Add (new LogoDrawerLayer (0, (uint)(this.Height * commentFramePart),
 					(uint)this.Width, (uint)(this.Height * titlesFramePart) + 1));  // Слой панелей
@@ -524,9 +544,9 @@ namespace RD_AAOW
 				}
 
 			// Смена фазы
-			if (steps > 55)
+			if ((steps2 > 2 * fps) || debugMode)
 				{
-				steps = 0;
+				steps2 = 0;
 				currentPhase++;
 				}
 			}
@@ -594,7 +614,8 @@ namespace RD_AAOW
 
 			if (vm.IsCreated && writeVoiceActing)
 				{
-				synthesizer.Dispose ();
+				synth_en.Dispose ();
+				synth_ru.Dispose ();
 				}
 			vm.Dispose ();
 			}
@@ -624,13 +645,16 @@ namespace RD_AAOW
 			if (StringsSet[0][0].StringType == 7)
 				return;
 
-			if (steps < StringsSet[0][0].StringLength)
+			if (steps2 < StringsSet[0][0].StringLength)
 				{
 				// Одна буква
-				string letter = StringsSet[0][0].StringText.Substring ((int)steps++, 1);
+				string letter = StringsSet[0][0].StringText.Substring ((int)steps2++, 1);
 				if (letter == "$")
 					{
-					highlight = !highlight;
+					//highlight = !highlight;
+					uint.TryParse (StringsSet[0][0].StringText.Substring ((int)steps2++, 1), out highlight);
+					if (highlight > brushes[0].Count - 3)
+						highlight = (uint)(brushes[0].Count - 3);
 					return;
 					}
 
@@ -638,7 +662,8 @@ namespace RD_AAOW
 				// Нулевой режим игнорировать
 					{
 					Field.DrawString (letter, StringsSet[0][0].StringFont,
-						highlight ? brushes[0][2] : brushes[(int)StringsSet[0][0].StringType][0], drawPoint);
+						(highlight > 0) ? brushes[0][2 + (int)highlight] :
+						brushes[(int)StringsSet[0][0].StringType][0], drawPoint);
 					}
 				else if (StringsSet[0][0].StringType > frameTypesCount)
 					{
@@ -659,11 +684,11 @@ namespace RD_AAOW
 				}
 
 			// Кончился текст строки и задержка отображения
-			else if (steps > StringsSet[0][0].StringLength + StringsSet[0][0].Pause)
+			else if (steps2 > StringsSet[0][0].StringLength + StringsSet[0][0].Pause)
 				{
 				// Переход к следующей текстовой строке
 				StringsSet[0].RemoveAt (0);
-				steps = 0;
+				steps2 = 0;
 				if (StringsSet[0].Count > 0)
 					{
 					drawPoint.X = lineLeft;
@@ -674,7 +699,7 @@ namespace RD_AAOW
 			// Кончился только текст строки, пауза
 			else
 				{
-				steps++;
+				steps2++;
 				}
 
 			// Обработка смены экрана
@@ -785,7 +810,7 @@ namespace RD_AAOW
 
 					if (!uint.TryParse (s.Substring (2, 5), out pause) || (pause > 60000))  // Пауза в миллисекундах
 						pause = 0;  // Без ограничений
-					pause = (uint)(pause * fps) / 500;   // Пауза во фреймах
+					pause = (uint)(pause * fps) / 1000;   // Пауза во фреймах
 
 					if (!showOutput && (type == 3))
 						continue;

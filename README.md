@@ -15,16 +15,6 @@
 
 
 
-## Requirements / Требования
-
-Needs Windows XP or newer, Framework 4.0 or newer. Interface language: en_us
-
-Требуется ОС Windows XP и новее, Framework 4.0 и новее. Язык интерфейса: en_us
-
-&nbsp;
-
-
-
 ## [Development policy and EULA / Политика разработки и EULA](https://adslbarxatov.github.io/ADP)
 
 This Policy (ADP), its positions, conclusion, EULA and application methods

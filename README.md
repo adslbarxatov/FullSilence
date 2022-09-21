@@ -1,11 +1,17 @@
-# FullSilence visualization tool v 2.6
-# CodeShow visualization tool v 2.2.1
+# [FullSilence](https://youtube.com/playlist?list=PLe7qKwHNkZTsreIEQFedftXv3iQG-5LOA) visualization tool v 2.6
+# [CodeShow](https://youtube.com/playlist?list=PLe7qKwHNkZTuZiVfiX1EhD4G7EPcReaA5) visualization tool v 2.2.1
 
+
+Code snippets used within projects of the same name when rendering text
 
 Фрагменты кода, используемые в рамках одноимённых проектов при визуализации текста
 
 
 #
+
+This repository contains code that can be useful in rendering texts, converting them
+to videos, and positioning audio. Also in the project there is a MIDI command handler
+ready for use
 
 Данный репозиторий содержит код, который может быть полезен в работах по визуализации
 текстов, их преобразовании в видеоролики и позиционировании звукового сопровождения.
@@ -15,7 +21,7 @@
 
 
 
-## [Development policy and EULA / Политика разработки и EULA](https://adslbarxatov.github.io/ADP)
+## [Development policy and EULA](https://adslbarxatov.github.io/ADP) / [Политика разработки и EULA](https://adslbarxatov.github.io/ADP/ru)
 
 This Policy (ADP), its positions, conclusion, EULA and application methods
 describes general rules that we follow in all of our development processes, released applications and implemented ideas.

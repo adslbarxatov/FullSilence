@@ -11,11 +11,17 @@ Code snippets used within projects of the same name when rendering text
 
 This repository contains code that can be useful in rendering texts, converting them
 to videos, and positioning audio. Also in the project there is a MIDI command handler
-ready for use
+ready for use.
+
+:warning: ***This repository will no longer receive updates***
+
+#
 
 Данный репозиторий содержит код, который может быть полезен в работах по визуализации
 текстов, их преобразовании в видеоролики и позиционировании звукового сопровождения.
-Также в проекте присутствует обработчик MIDI-команд, готовый к применению
+Также в проекте присутствует обработчик MIDI-команд, готовый к применению.
+
+:warning: ***Этот репозиторий больше не будет получать обновления***
 
 &nbsp;
 
